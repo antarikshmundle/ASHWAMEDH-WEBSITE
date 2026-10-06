@@ -13,23 +13,27 @@
 1. **Content ≠ presentation.** Event and festival data live in `src/data/`; components never hardcode content.
 2. **Unknown = `null`.** Data never contains `"TBA"` strings or guessed values. A single helper in `src/lib/`
    maps missing values to the right placeholder ("TBA", "Coming Soon", "Registration Opening Soon").
-3. **One event-detail component** renders every event page from data (`/events/[vertical]/[slug]`).
+3. **One event-detail component** renders every event page from data (`/events/[slug]`).
 4. **Theming by tokens.** Verticals (Technomedh, Cultural, Sports, Cultural Night) override a small set
    of accent tokens via a `data-vertical` attribute — one brand, four personalities.
 5. **Reference-first UI.** The locked image in `docs/ux/reference/` decides layout and composition.
 
-## Planned routes
+## Routes
+
+Defined in Phase 2 — see [../ux/sitemap-and-routes.md](../ux/sitemap-and-routes.md).
 
 ```
-/                              Home
-/events                        All verticals
-/events/[vertical]             technomedh | cultural | sports
-/events/[vertical]/[slug]      Event detail (data-driven)
+/                       Home
+/events                 Four-vertical overview
+/technomedh             Vertical listing
+/cultural               Vertical listing
+/sports                 Vertical listing
+/events/[slug]          Event detail (one data-driven template)
 /cultural-night
-/schedule                      "Schedule Releasing Soon" until dates are official
-/gallery
-/campus-map
-/team
+/schedule               "Schedule Releasing Soon" until dates are official
+/venue                  Campus map
+/gallery                Coming Soon (OD-09)
+/team                   Coming Soon (OD-09)
 /about
 /contact
 ```

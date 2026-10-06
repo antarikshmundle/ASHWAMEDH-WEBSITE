@@ -3,6 +3,45 @@
 Clarifications and corrections from the project owner. These take precedence over
 [master-prompt-v1.md](./master-prompt-v1.md) where they conflict. Newest first.
 
+## 2026-10-06 — Phase 2 owner decisions LOCKED
+
+All 16 decisions (OD-01 … OD-16) are locked and authoritative. Full wording: [docs/ux/owner-decisions.md](../ux/owner-decisions.md).
+
+| ID    | Locked decision (summary)                                                                                                          |
+| ----- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| OD-01 | Official name "Business Ideathon"                                                                                                  |
+| OD-02 | Official name "Project Competition"                                                                                                |
+| OD-03 | Hackathon description / team format stay `null` / Coming Soon                                                                      |
+| OD-04 | Schedule day count TBA; no day tabs                                                                                                |
+| OD-05 | Schedule venues TBA; reference venue names never used                                                                              |
+| OD-06 | Abstract map allowed; no invented pins, locations, labels or legend                                                                |
+| OD-07 | Reference taglines are not official copy; copy areas stay placeholders / Coming Soon                                               |
+| OD-08 | Social icons hidden until official handles                                                                                         |
+| OD-09 | Gallery and Team kept in navbar; Coming Soon pages                                                                                 |
+| OD-10 | Campus Map not a navbar item; `/venue` is the access point                                                                         |
+| OD-11 | Homepage keeps Schedule, Cultural Night and Venue previews                                                                         |
+| OD-12 | "Coming Soon" CTA non-clickable / disabled until official launch info                                                              |
+| OD-13 | Logo transition approved: PCE (hero) → Ashwamedh (sticky / inner pages); logos unmodified                                          |
+| OD-14 | Cultural Night "What's On": Group Dance, Singing, Solo Dance, Inauguration / Stage Performances; no public registration by default |
+| OD-15 | "Events" = plain link to `/events`, no dropdown                                                                                    |
+| OD-16 | Listing cards show department                                                                                                      |
+
+OD-12 clarification (locked): the hero "Coming Soon →" follows the same rule as the navbar "Coming Soon". Both are
+disabled and non-clickable, "Scroll to explore" stays functional, and there are no fake redirects or placeholder
+destinations.
+
+**Phase 2 is LOCKED (2026-10-06).**
+
+## 2026-10-06 — Phase 2 (UX / IA) documentation
+
+| #   | Decision                                                                                                                                                                                                      |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| P1  | Reference image stored as `docs/ux/reference/ashwamedh-final-ui-reference.jpg` (renamed from `.png.jpg`; it is a JPEG). D1 resolved.                                                                          |
+| P2  | Reference image = source of truth for UX structure and visual hierarchy only, **not** for official content.                                                                                                   |
+| P3  | Routes: `/`, `/events`, `/technomedh`, `/cultural`, `/sports`, `/events/[slug]`, `/cultural-night`, `/schedule`, `/venue`, `/gallery`, `/team`, `/about`, `/contact`. Supersedes `/events/[vertical]/[slug]`. |
+| P4  | Placeholder vocabulary limited to TBA (facts), Coming Soon (content blocks), Registration Opening Soon (registration CTA only).                                                                               |
+| P5  | Owner decisions OD-01 … OD-16 — locked, see above.                                                                                                                                                            |
+
 ## 2026-10-06 — Pre-Phase 0 corrections
 
 | #   | Decision                                                                                                                                                                                                          |

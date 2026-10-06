@@ -8,7 +8,8 @@ Spec: `docs/requirements/master-prompt-v1.md`. Owner corrections (take precedenc
 - Event inventory in master prompt §6 is the only source of events. Do not add events.
 - Never label anything "Upcoming" (no dates). Schedule = "Schedule Releasing Soon".
 - No stock photos posing as real Ashwamedh events — abstract/graphic placeholders only.
-- Locked UI/UX reference image (`docs/ux/reference/`) is the visual source of truth. Do not redesign or add sections.
+- Locked UI/UX reference `docs/ux/reference/ashwamedh-final-ui-reference.jpg` is the source of truth for UX/visual structure, NOT for content. Do not redesign or add sections.
+- UX/IA spec: `docs/ux/` (Phase 2). Open owner decisions: `docs/ux/owner-decisions.md` — follow their interim behaviour until decided.
 - Content lives in `src/data/`, never hardcoded in components. One reusable event-detail component.
 - Work phase by phase; do not start a new phase without owner approval. Explain what/why/what changes (Hinglish) before major steps.
 - Before finishing: `npm run lint`, `npm run test`, `npm run build`.
