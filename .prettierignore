@@ -1,0 +1,9 @@
+node_modules
+.next
+out
+build
+coverage
+package-lock.json
+next-env.d.ts
+# Source-of-truth documents are kept verbatim.
+docs/requirements/master-prompt-v1.md
