@@ -3,6 +3,35 @@
 Clarifications and corrections from the project owner. These take precedence over
 [master-prompt-v1.md](./master-prompt-v1.md) where they conflict. Newest first.
 
+## 2026-10-06 — Phase 3 owner decisions (DS-01 … DS-08)
+
+Full wording: [docs/design-system/owner-review.md](../design-system/owner-review.md).
+
+| ID    | Status              | Decision                                                                                                                                                                                                                                      |
+| ----- | ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| DS-01 | LOCKED              | Rajdhani + Inter                                                                                                                                                                                                                              |
+| DS-02 | PROVISIONAL         | Ember `#F08A3C` is a provisional, reference-derived accent, not the official brand colour                                                                                                                                                     |
+| DS-03 | LOCKED (functional) | Four vertical accents kept for differentiation; may be superseded by official 2026 branding                                                                                                                                                   |
+| DS-04 | LOCKED              | PCE logo completely unmodified; light plate approved                                                                                                                                                                                          |
+| DS-05 | APPROVED            | Transparent whitespace around the Ashwamedh logo may be trimmed; artwork never altered                                                                                                                                                        |
+| DS-06 | REQUIRED DEPENDENCY | No upscaling, tracing, vectorising or artificial enlargement; official high-res logo (SVG preferred) required for the final large hero logo. Phase 4 is not blocked: current logo usable within native sharpness limits (≤ 203 CSS px on 2×). |
+| DS-07 | LOCKED              | Field-based multi-colour chip system (three tokenised tones), following the reference                                                                                                                                                         |
+| DS-08 | LOCKED              | Hero side word stacks hidden on mobile                                                                                                                                                                                                        |
+
+Standing rule: the reference image is not simplified for system consistency when it uses intentional variation.
+
+**Phase 3 is LOCKED (2026-10-06).**
+
+## 2026-10-06 — Phase 3 (Design System) — documentation (locked)
+
+| #   | Decision                                                                                                                                      |
+| --- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| S1  | Design system documented in [docs/design-system/](../design-system/README.md); implemented in Phase 5 as one central token file.              |
+| S2  | Palette measured from the locked reference image, **not** derived from the Ashwamedh logo. Brand accent (ember) is provisional and swappable. |
+| S3  | Context-accent model: components use `accent.*`, resolving to brand globally or to the vertical via `data-vertical`.                          |
+| S4  | Text on accent fills is always dark (white fails contrast on every accent).                                                                   |
+| S5  | Owner decisions DS-01 … DS-08 — see above.                                                                                                    |
+
 ## 2026-10-06 — Phase 2 owner decisions LOCKED
 
 All 16 decisions (OD-01 … OD-16) are locked and authoritative. Full wording: [docs/ux/owner-decisions.md](../ux/owner-decisions.md).

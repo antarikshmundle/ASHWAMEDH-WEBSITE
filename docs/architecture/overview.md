@@ -3,7 +3,8 @@
 ## Stack
 
 - **Next.js 16 (App Router) + TypeScript (strict)** — all pages statically generated.
-- **Tailwind CSS v4** — design tokens centralized in one CSS file (Phase 3).
+- **Tailwind CSS v4** — design tokens (defined in [../design-system/](../design-system/README.md)) centralized in one CSS file, `src/styles/tokens.css` (Phase 5).
+- **Fonts** — Rajdhani (display) + Inter (body) via `next/font` (locked, DS-01).
 - **Motion** + **Lucide React** — added when first used (Phase 5).
 - **Vitest** for unit tests; Playwright for E2E/a11y later.
 - No backend, auth, database or CMS until official requirements justify one.

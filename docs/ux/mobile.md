@@ -19,14 +19,14 @@ full-screen overlay menu, disabled "Coming Soon" status at the bottom of the ove
 
 ## Homepage
 
-| Section                | Mobile composition                                                                                                                                                                                                                  |
-| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Hero                   | Logo, sub-line, tagline area, disabled "Coming Soon" CTA and "Scroll to explore" stacked and centred. Left/right word stacks collapse into one subtle line or are omitted visually (decorative only). Fits within the first screen. |
-| Events overview        | Four cards in a single column (2 × 2 on tablet), fixed order. Each card fully tappable.                                                                                                                                             |
-| Schedule preview       | Category rows stacked; time and venue on a second line. No day tabs (OD-04).                                                                                                                                                        |
-| Cultural Night preview | Day 1 / Day 2 cards side by side (they are short).                                                                                                                                                                                  |
-| Venue preview          | Abstract map + link; no pins, labels or legend (OD-06).                                                                                                                                                                             |
-| Footer                 | Stacked blocks (see [navigation.md §14](navigation.md#14-footer-a-reference-panel-09)); social icons hidden (OD-08).                                                                                                                |
+| Section                | Mobile composition                                                                                                                                                                       |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Hero                   | Logo, sub-line, tagline area, disabled "Coming Soon" CTA and "Scroll to explore" stacked and centred. Left/right word stacks are hidden on mobile (DS-08). Fits within the first screen. |
+| Events overview        | Four cards in a single column (2 × 2 on tablet), fixed order. Each card fully tappable.                                                                                                  |
+| Schedule preview       | Category rows stacked; time and venue on a second line. No day tabs (OD-04).                                                                                                             |
+| Cultural Night preview | Day 1 / Day 2 cards side by side (they are short).                                                                                                                                       |
+| Venue preview          | Abstract map + link; no pins, labels or legend (OD-06).                                                                                                                                  |
+| Footer                 | Stacked blocks (see [navigation.md §14](navigation.md#14-footer-a-reference-panel-09)); social icons hidden (OD-08).                                                                     |
 
 ## Event listing
 

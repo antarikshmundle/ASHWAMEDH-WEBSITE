@@ -3,7 +3,7 @@
 Official website of **ASHWAMEDH 2026** — the flagship annual college festival of
 **Priyadarshini College of Engineering (PCE), Nagpur**.
 
-> Status: **Phase 2 — UX / Information Architecture: LOCKED.** No UI has been implemented yet.
+> Status: **Phase 2 locked · Phase 3 Design System locked.** No UI has been implemented yet.
 
 ## Requirements
 
@@ -60,6 +60,7 @@ tests/           unit (Vitest) and e2e
 - [Architecture overview](docs/architecture/overview.md)
 - [UX / information architecture (Phase 2)](docs/ux/README.md) — sitemap, navigation, flows, states
 - [Owner decisions register](docs/ux/owner-decisions.md)
+- [Design system (Phase 3)](docs/design-system/README.md) — colours, type, layout, components, logos, motion
 - [Official content status](docs/content/README.md)
 - [Locked UI/UX reference](docs/ux/reference/ashwamedh-final-ui-reference.jpg)
 

@@ -12,4 +12,5 @@ Spec: `docs/requirements/master-prompt-v1.md`. Owner corrections (take precedenc
 - UX/IA spec: `docs/ux/` (Phase 2). Open owner decisions: `docs/ux/owner-decisions.md` — follow their interim behaviour until decided.
 - Content lives in `src/data/`, never hardcoded in components. One reusable event-detail component.
 - Work phase by phase; do not start a new phase without owner approval. Explain what/why/what changes (Hinglish) before major steps.
+- Design system: `docs/design-system/`. Components use context accent tokens (`accent.*`), never hard-coded vertical colours. Logos unmodified; PCE logo always on a light plate; never upscale/trace/enlarge the current Ashwamedh logo; use it only ≤ 203 CSS px until the official high-res asset arrives (DS-06). Event-detail chips use the fixed multi-colour chip palette (DS-07).
 - Before finishing: `npm run lint`, `npm run test`, `npm run build`.
