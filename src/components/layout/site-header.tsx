@@ -1,13 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSelectedLayoutSegment } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { AshwamedhLogo, PceLogo } from "@/components/ui/logos";
-import { isActive, primaryNav } from "@/data/navigation";
+import { CollegeLockup } from "@/components/ui/college-lockup";
+import { AshwamedhLogo } from "@/components/ui/logos";
+import { isActive, primaryNav, type NavItem } from "@/data/navigation";
 import { site } from "@/data/site";
 import { HERO_LOGO_ID } from "@/lib/constants";
+
+/** Root-level segment Next.js selects while rendering the not-found page. */
+const NOT_FOUND_SEGMENT = "/_not-found";
 
 /**
  * Global navbar (docs/ux/navigation.md, docs/design-system/components.md → Navbar).
@@ -16,6 +20,11 @@ import { HERO_LOGO_ID } from "@/lib/constants";
  */
 export function SiteHeader() {
   const pathname = usePathname();
+  // Every unknown URL is served the same prerendered 404 page, which has no real pathname on
+  // the server. The router's selected segment is "/_not-found" there on both server and client,
+  // so no nav item is marked current on 404 pages and the markup hydrates identically.
+  const notFound = useSelectedLayoutSegment() === NOT_FOUND_SEGMENT;
+  const isCurrent = (item: NavItem) => !notFound && isActive(pathname, item);
   const isHome = pathname === "/";
   const [heroInView, setHeroInView] = useState(true);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -61,7 +70,7 @@ export function SiteHeader() {
           <nav aria-label="Primary" className="hidden xl:block">
             <ul className="flex items-center gap-1 min-[1360px]:gap-3">
               {primaryNav.map((item) => {
-                const active = isActive(pathname, item);
+                const active = isCurrent(item);
                 return (
                   <li key={item.href}>
                     <Link
@@ -107,7 +116,7 @@ export function SiteHeader() {
       {/* Spacer: inner pages start below the fixed bar; the homepage hero sits under it. */}
       {!isHome && <div aria-hidden className="h-16 xl:h-[72px]" />}
 
-      {menuOpen && <MobileMenu pathname={pathname} onClose={() => setMenuOpen(false)} />}
+      {menuOpen && <MobileMenu isCurrent={isCurrent} onClose={() => setMenuOpen(false)} />}
     </>
   );
 }
@@ -124,16 +133,7 @@ function LogoBlock({ heroState }: { heroState: boolean }) {
           heroState ? "opacity-100" : "pointer-events-none absolute opacity-0"
         }`}
       >
-        <span className="flex xl:hidden">
-          <PceLogo height={36} alt="" eager />
-        </span>
-        <span className="hidden xl:flex">
-          <PceLogo height={40} alt="" eager />
-        </span>
-        <span className="hidden flex-col type-micro leading-snug tracking-[0.08em] whitespace-nowrap text-fg sm:flex">
-          <span>Priyadarshini College of Engg.</span>
-          <span className="text-fg-secondary">Nagpur</span>
-        </span>
+        <CollegeLockup variant="navbar" />
         <span className="sr-only">
           {site.college}, {site.city} — Home
         </span>
@@ -155,7 +155,13 @@ function LogoBlock({ heroState }: { heroState: boolean }) {
   );
 }
 
-function MobileMenu({ pathname, onClose }: { pathname: string; onClose: () => void }) {
+function MobileMenu({
+  isCurrent,
+  onClose,
+}: {
+  isCurrent: (item: NavItem) => boolean;
+  onClose: () => void;
+}) {
   const panelRef = useRef<HTMLDivElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
 
@@ -191,6 +197,16 @@ function MobileMenu({ pathname, onClose }: { pathname: string; onClose: () => vo
     };
   }, [onKeyDown]);
 
+  // The menu is hidden from xl (1280 px); close it there so the scroll lock is released.
+  useEffect(() => {
+    const desktop = window.matchMedia("(min-width: 80rem)");
+    const onChange = (e: MediaQueryListEvent) => {
+      if (e.matches) onClose();
+    };
+    desktop.addEventListener("change", onChange);
+    return () => desktop.removeEventListener("change", onChange);
+  }, [onClose]);
+
   return (
     <div
       id="mobile-menu"
@@ -217,7 +233,7 @@ function MobileMenu({ pathname, onClose }: { pathname: string; onClose: () => vo
       <nav aria-label="Primary" className="container-site flex-1 pt-6">
         <ul className="flex flex-col">
           {primaryNav.map((item) => {
-            const active = isActive(pathname, item);
+            const active = isCurrent(item);
             return (
               <li key={item.href} className="border-b border-line-subtle">
                 <Link
@@ -241,12 +257,7 @@ function MobileMenu({ pathname, onClose }: { pathname: string; onClose: () => vo
         <p className="flex h-12 cursor-default items-center justify-center rounded-md border border-accent/55 type-button text-fg">
           Coming Soon
         </p>
-        <div className="flex items-center gap-3">
-          <PceLogo height={36} />
-          <span className="type-micro leading-snug tracking-[0.08em] text-fg-secondary">
-            {site.college}, {site.city}
-          </span>
-        </div>
+        <CollegeLockup variant="menu" />
       </div>
     </div>
   );

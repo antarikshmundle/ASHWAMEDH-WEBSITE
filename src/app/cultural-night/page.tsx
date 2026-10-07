@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
-import { Footprints, Mic, Sparkles, Users } from "lucide-react";
+import { Footprints, Mic, Sparkles, Users, type LucideIcon } from "lucide-react";
 import { CulturalNightBand } from "@/components/sections/cultural-night-band";
+import { IconTile } from "@/components/ui/icon-tile";
 import { culturalNight } from "@/data/festival";
 
 export const metadata: Metadata = {
@@ -8,7 +9,13 @@ export const metadata: Metadata = {
   alternates: { canonical: "/cultural-night" },
 };
 
-const icons = [Users, Mic, Footprints, Sparkles];
+/** Keyed by item, so reordering the data never changes an item's icon. Typed to cover every item. */
+const icons: Record<(typeof culturalNight.whatsOn)[number], LucideIcon> = {
+  "Group Dance": Users,
+  Singing: Mic,
+  "Solo Dance": Footprints,
+  "Inauguration / Stage Performances": Sparkles,
+};
 
 /**
  * Cultural Night (reference panel 07, OD-14): hero band, Day 1 / Day 2 (TBA), and "What's On"
@@ -26,20 +33,15 @@ export default function CulturalNightPage() {
           What&apos;s On
         </h2>
         <ul className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
-          {culturalNight.whatsOn.map((item, i) => {
-            const Icon = icons[i] ?? Sparkles;
-            return (
-              <li
-                key={item}
-                className="flex min-h-20 items-center gap-4 rounded-lg border border-line bg-surface px-5 py-4"
-              >
-                <span className="flex size-10 shrink-0 items-center justify-center rounded-sm bg-accent/12">
-                  <Icon aria-hidden strokeWidth={1.5} className="size-5 text-accent" />
-                </span>
-                <span className="type-title text-fg">{item}</span>
-              </li>
-            );
-          })}
+          {culturalNight.whatsOn.map((item) => (
+            <li
+              key={item}
+              className="flex min-h-20 items-center gap-4 rounded-lg border border-line bg-surface px-5 py-4"
+            >
+              <IconTile icon={icons[item]} />
+              <span className="type-title text-fg">{item}</span>
+            </li>
+          ))}
         </ul>
       </section>
     </div>

@@ -43,7 +43,7 @@ Defined in Phase 2 — see [../ux/sitemap-and-routes.md](../ux/sitemap-and-route
 
 ```
 src/app/          Routes only — thin, compose sections
-src/components/   ui/ navigation/ cards/ sections/ layout/
+src/components/   ui/ cards/ sections/ layout/ art/
 src/data/         Typed content (site identity, events, departments)
 src/lib/          Pure helpers (site URL, placeholder display, metadata)
 src/styles/       globals.css (+ tokens in Phase 3)

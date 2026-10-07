@@ -7,8 +7,6 @@ import { useId } from "react";
  */
 export function MapArt({ className = "" }: { className?: string }) {
   const uid = useId().replace(/:/g, "");
-  const dots: [number, number][] = [];
-  for (let x = 12; x < 800; x += 24) for (let y = 12; y < 400; y += 24) dots.push([x, y]);
 
   return (
     <svg
@@ -30,14 +28,15 @@ export function MapArt({ className = "" }: { className?: string }) {
         <mask id={`${uid}-mask`}>
           <rect width="800" height="400" fill={`url(#${uid}-fade)`} />
         </mask>
+        {/* Dot grid: one dot per 24-unit tile (centres x = 12…780, y = 12…396) — one pattern
+            instead of 561 <circle> elements. */}
+        <pattern id={`${uid}-dots`} patternUnits="userSpaceOnUse" width="24" height="24">
+          <circle cx="12" cy="12" r="1.2" fill="#56708c" fillOpacity="0.55" />
+        </pattern>
       </defs>
       <rect width="800" height="400" fill={`url(#${uid}-glow)`} />
       <g mask={`url(#${uid}-mask)`}>
-        <g fill="#56708c" fillOpacity="0.55">
-          {dots.map(([x, y]) => (
-            <circle key={`${x}-${y}`} cx={x} cy={y} r="1.2" />
-          ))}
-        </g>
+        <rect width="800" height="400" fill={`url(#${uid}-dots)`} />
         <g fill="none" stroke="#3a4d63" strokeWidth="1" strokeOpacity="0.8">
           <path d="M400 108 C 520 104 610 160 606 206 C 602 258 508 296 400 292 C 288 288 196 250 198 200 C 200 148 288 112 400 108 Z" />
           <path

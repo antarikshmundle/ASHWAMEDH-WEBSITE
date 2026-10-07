@@ -2,6 +2,7 @@ import { MapPinOff } from "lucide-react";
 import { MapArt } from "@/components/art/map-art";
 import { ArrowLink } from "@/components/ui/button";
 import { CopyPlaceholder } from "@/components/ui/copy-placeholder";
+import { sectionTitles } from "@/data/festival";
 import { placeholders } from "@/lib/display";
 
 /**
@@ -20,7 +21,7 @@ export function VenueMap({
     <div data-vertical="brand" className="overflow-hidden rounded-xl border border-line bg-surface">
       <div className="flex flex-col items-center px-5 pt-8 text-center sm:pt-9">
         <Heading id="venue-title" className="type-display text-fg">
-          Campus Map
+          {sectionTitles.venue}
         </Heading>
         {/* OD-07: sub-line area kept; reference text not used */}
         <CopyPlaceholder lines={1} align="center" className="mt-5 w-52" />

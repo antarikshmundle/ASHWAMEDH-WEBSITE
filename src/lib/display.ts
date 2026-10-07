@@ -5,7 +5,6 @@ import type { FestEvent } from "@/types/festival";
  * TBA → short facts · Coming Soon → content blocks · Registration Opening Soon → registration CTA only.
  */
 export const TBA = "TBA";
-export const COMING_SOON = "Coming Soon";
 export const REGISTRATION_OPENING_SOON = "Registration Opening Soon";
 
 /** Schedule status line; the second part is shown in the brand accent (reference panel 06). */
@@ -19,7 +18,6 @@ export const placeholders = {
   prizes: "Prize details coming soon.",
   venue: "Venue will be announced.",
   coordinator: "Coordinator details will be announced.",
-  schedule: `${scheduleStatus.lead} ${scheduleStatus.accent}`,
   venueMap: "Venue details coming soon.",
   gallery: "Gallery coming soon.",
   team: "Organising committee will be announced.",
@@ -29,6 +27,12 @@ export const placeholders = {
 export function fact(value: string | null | undefined): string {
   const trimmed = value?.trim();
   return trimmed ? trimmed : TBA;
+}
+
+/** A venue, or "Venue TBA" where the value stands alone without a label (schedule rows). */
+export function venueFact(venue: string | null): string {
+  const trimmed = venue?.trim();
+  return trimmed ? trimmed : `Venue ${TBA}`;
 }
 
 /** "Date & Time" chip: one "TBA" when both are unknown. */

@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { PageHeader } from "@/components/sections/page-header";
-import { PceLogo } from "@/components/ui/logos";
-import { VerticalIcon } from "@/components/ui/vertical-icon";
+import { CollegeLockup } from "@/components/ui/college-lockup";
+import { IconTile } from "@/components/ui/icon-tile";
+import { verticalIcons } from "@/components/ui/vertical-icon";
 import { site } from "@/data/site";
 import { verticals } from "@/data/verticals";
 
@@ -31,9 +32,7 @@ export default function AboutPage() {
                 href={v.href}
                 className="group flex min-h-16 items-center gap-4 rounded-lg border border-line bg-surface px-5 transition-colors hover:border-accent/55"
               >
-                <span className="flex size-10 items-center justify-center rounded-sm bg-accent/12">
-                  <VerticalIcon name={v.icon} className="size-5 text-accent" />
-                </span>
+                <IconTile icon={verticalIcons[v.icon]} />
                 <span className="flex-1 type-title text-fg">{v.name}</span>
                 <ArrowRight
                   aria-hidden
@@ -45,14 +44,10 @@ export default function AboutPage() {
         </ul>
 
         <h2 className="mt-12 type-h2 text-fg">The college</h2>
-        <div className="mt-6 flex items-center gap-5 rounded-lg border border-line bg-surface p-5">
-          <PceLogo height={56} />
-          <p className="type-body text-fg-secondary">
-            <span className="font-semibold text-fg">{site.college}</span>
-            <br />
-            {site.city}
-          </p>
-        </div>
+        <CollegeLockup
+          variant="about"
+          className="mt-6 rounded-lg border border-line bg-surface p-5"
+        />
       </div>
     </>
   );

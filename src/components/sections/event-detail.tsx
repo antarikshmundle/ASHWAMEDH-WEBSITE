@@ -11,7 +11,7 @@ import {
   Users,
 } from "lucide-react";
 import type { ReactNode } from "react";
-import { VerticalArt } from "@/components/art/vertical-art";
+import { EventImage } from "@/components/ui/event-image";
 import { DisabledCta, PrimaryLink, SecondaryLink } from "@/components/ui/button";
 import { Chip } from "@/components/ui/chip";
 import { Tabs } from "@/components/ui/tabs";
@@ -65,7 +65,12 @@ export function EventDetail({ event }: { event: FestEvent }) {
           <div className="grid lg:grid-cols-12">
             {/* Image (top on mobile/tablet, right on desktop) */}
             <div className="relative aspect-[16/8] lg:order-2 lg:col-span-5 lg:aspect-auto">
-              <VerticalArt vertical={event.category} variant={variant} />
+              <EventImage
+                event={event}
+                variant={variant}
+                sizes="(min-width: 1024px) 40vw, 100vw"
+                preload
+              />
               <div className="absolute inset-0 bg-gradient-to-t from-surface via-transparent to-transparent lg:bg-gradient-to-r lg:from-surface lg:via-surface/30" />
             </div>
 
@@ -180,8 +185,9 @@ export function EventDetail({ event }: { event: FestEvent }) {
                 label: "Coordinator",
                 content: event.coordinator?.length ? (
                   <ul className="flex flex-col gap-3">
-                    {event.coordinator.map((c) => (
-                      <li key={c.name} className="type-body text-fg-secondary">
+                    {event.coordinator.map((c, i) => (
+                      // Static, never-reordered list: index keys can't collide on repeated names.
+                      <li key={i} className="type-body text-fg-secondary">
                         <span className="font-semibold text-fg">{c.name}</span>
                         {c.phone && <> · {c.phone}</>}
                         {c.email && <> · {c.email}</>}
@@ -227,8 +233,9 @@ function ListOr({ items, fallback }: { items: string[] | null; fallback: string 
   if (!items?.length) return <ComingSoon>{fallback}</ComingSoon>;
   return (
     <ol className="flex list-decimal flex-col gap-2 pl-5 type-body text-fg-secondary marker:text-accent">
-      {items.map((item) => (
-        <li key={item}>{item}</li>
+      {items.map((item, i) => (
+        // Static, never-reordered list: index keys can't collide on repeated rules.
+        <li key={i}>{item}</li>
       ))}
     </ol>
   );

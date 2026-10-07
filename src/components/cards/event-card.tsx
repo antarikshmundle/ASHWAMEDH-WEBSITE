@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import { VerticalArt } from "@/components/art/vertical-art";
+import { EventImage } from "@/components/ui/event-image";
 import { fact, participation } from "@/lib/display";
 import type { FestEvent } from "@/types/festival";
 
@@ -16,8 +16,12 @@ export function EventCard({ event, index = 0 }: { event: FestEvent; index?: numb
       className="group flex h-full scroll-mt-28 flex-col overflow-hidden rounded-lg border border-line bg-surface transition-[transform,border-color,box-shadow] duration-150 ease-[var(--ease-standard)] hover:-translate-y-0.5 hover:border-accent/55 hover:shadow-card"
     >
       <div className="relative aspect-video overflow-hidden">
-        {/* D5: abstract placeholder until official imagery exists */}
-        <VerticalArt vertical={event.category} variant={index} />
+        {/* Official image, or the abstract placeholder until one exists (D5) */}
+        <EventImage
+          event={event}
+          variant={index}
+          sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
+        />
       </div>
       <div className="flex flex-1 flex-col gap-1.5 p-4 lg:p-5">
         <h3 className="type-title text-fg">{event.name}</h3>

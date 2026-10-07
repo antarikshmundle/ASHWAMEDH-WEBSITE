@@ -11,6 +11,8 @@ import type { ReactNode } from "react";
 const base =
   "inline-flex min-h-11 items-center justify-center gap-2.5 rounded-md px-6 type-button transition-[background-color,border-color,box-shadow,transform] duration-150 ease-[var(--ease-standard)]";
 
+const primary = `${base} h-12 bg-accent-strong text-on-accent hover:bg-accent hover:glow-sm active:scale-[0.98]`;
+
 export function PrimaryLink({
   href,
   children,
@@ -20,10 +22,9 @@ export function PrimaryLink({
   children: ReactNode;
   external?: boolean;
 }) {
-  const cls = `${base} h-12 bg-accent-strong text-on-accent hover:bg-accent hover:glow-sm active:scale-[0.98]`;
   if (external) {
     return (
-      <a href={href} target="_blank" rel="noopener noreferrer" className={cls}>
+      <a href={href} target="_blank" rel="noopener noreferrer" className={primary}>
         {children}
         <ExternalLink aria-hidden className="size-[18px]" />
         <span className="sr-only">(opens in new tab)</span>
@@ -31,10 +32,28 @@ export function PrimaryLink({
     );
   }
   return (
-    <Link href={href} className={cls}>
+    <Link href={href} className={primary}>
       {children}
       <ArrowRight aria-hidden className="size-[18px]" />
     </Link>
+  );
+}
+
+/** Primary action that is not navigation (e.g. "Try again" on the error page). */
+export function PrimaryButton({
+  children,
+  icon,
+  onClick,
+}: {
+  children: ReactNode;
+  icon?: ReactNode;
+  onClick: () => void;
+}) {
+  return (
+    <button type="button" onClick={onClick} className={primary}>
+      {children}
+      {icon}
+    </button>
   );
 }
 

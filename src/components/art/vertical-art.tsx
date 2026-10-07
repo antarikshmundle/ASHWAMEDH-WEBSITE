@@ -75,20 +75,31 @@ const TRACES = [
 ];
 
 function Circuit({ uid, shift, variant }: MotifProps) {
-  const grid = [];
-  for (let x = -200; x <= 600; x += 20)
-    grid.push(<line key={`v${x}`} x1={x} y1="-150" x2={x} y2="450" />);
-  for (let y = -150; y <= 450; y += 20)
-    grid.push(<line key={`h${y}`} x1="-200" y1={y} x2="600" y2={y} />);
   // A different subset of traces per variant.
   const traces = TRACES.filter((_, i) => (i + variant) % 4 !== 0);
   const kind = variant % 4;
 
   return (
     <g transform={`translate(${(shift % 40) - 20} 0)`}>
-      <g stroke="currentColor" strokeOpacity="0.06" strokeWidth="1">
-        {grid}
-      </g>
+      {/* Background grid: lines every 20 units (x = -200…600, y = -150…450) drawn by one
+          pattern tile instead of 72 <line> elements. The tile is offset so its lines land on
+          the same coordinates; both lines are kept so crossings stay slightly brighter. */}
+      <defs>
+        <pattern
+          id={`${uid}-grid`}
+          patternUnits="userSpaceOnUse"
+          x="-10"
+          y="0"
+          width="20"
+          height="20"
+        >
+          <g stroke="currentColor" strokeOpacity="0.06" strokeWidth="1">
+            <line x1="10" y1="0" x2="10" y2="20" />
+            <line x1="0" y1="10" x2="20" y2="10" />
+          </g>
+        </pattern>
+      </defs>
+      <rect x="-200.5" y="-150.5" width="801" height="601" fill={`url(#${uid}-grid)`} />
       <g fill="none" stroke="currentColor" strokeWidth="1.5" strokeOpacity="0.55">
         {traces.map((d) => (
           <path key={d} d={d} />

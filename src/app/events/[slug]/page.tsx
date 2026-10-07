@@ -4,6 +4,7 @@ import { EventDetail } from "@/components/sections/event-detail";
 import { events, getEventBySlug } from "@/data/events";
 import { site } from "@/data/site";
 import { getVertical } from "@/data/verticals";
+import { baseOpenGraph } from "@/lib/metadata";
 
 /** All 39 event pages are generated at build time; unknown slugs 404. */
 export const dynamicParams = false;
@@ -29,7 +30,7 @@ export async function generateMetadata({ params }: PageProps<"/events/[slug]">):
     title: event.name,
     description,
     alternates: { canonical: `/events/${event.id}` },
-    openGraph: { title: `${event.name} | ${site.name}`, description },
+    openGraph: { ...baseOpenGraph, title: `${event.name} | ${site.name}`, description },
   };
 }
 

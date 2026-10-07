@@ -2,14 +2,26 @@
  * Festival-level content. Only confirmed facts; unknown values are `null` (D2, OD-07, OD-08).
  */
 
-/** Contact details — all on hold (master prompt §7). */
+/** Section headings from the reference (panels 06 and 08), shared by homepage previews and pages. */
+export const sectionTitles = {
+  schedule: "Event Schedule",
+  venue: "Campus Map",
+} as const;
+
+/**
+ * Contact details — all on hold (master prompt §7). Official values become links
+ * (src/lib/contact.ts); WhatsApp must be in international format, e.g. "+91 …".
+ */
 export const contact = {
   phone: null as string | null,
   whatsapp: null as string | null,
   email: null as string | null,
 };
 
-/** Official social handles — none yet; icons stay hidden (OD-08). */
+/**
+ * Official social handles — none yet (OD-08). The footer shows a button per https link
+ * listed here and nothing while the list is empty.
+ */
 export const socialLinks: readonly { label: string; href: string }[] = [];
 
 /** Cultural Night — two nights confirmed; dates TBA. */

@@ -1,5 +1,6 @@
 import { SectionHeading } from "@/components/ui/section-heading";
 import { ScheduleList } from "@/components/sections/schedule-list";
+import { sectionTitles } from "@/data/festival";
 import { scheduleStatus } from "@/lib/display";
 
 /**
@@ -22,7 +23,7 @@ export function SchedulePanel({ headingAs = "h2" }: { headingAs?: "h1" | "h2" })
           </>
         }
       >
-        Event Schedule
+        {sectionTitles.schedule}
       </SectionHeading>
       <div className="mt-10">
         <ScheduleList />

@@ -4,6 +4,7 @@ import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
 import { SkipLink } from "@/components/layout/skip-link";
 import { site } from "@/data/site";
+import { baseOpenGraph, siteTitle } from "@/lib/metadata";
 import { siteUrl } from "@/lib/site-url";
 import "@/styles/globals.css";
 
@@ -24,16 +25,14 @@ const inter = Inter({
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: `${site.name} | ${site.college}, ${site.city}`,
+    default: siteTitle,
     template: `%s | ${site.name}`,
   },
   description: site.description,
   openGraph: {
-    type: "website",
-    siteName: site.name,
-    title: `${site.name} | ${site.college}, ${site.city}`,
+    ...baseOpenGraph,
+    title: siteTitle,
     description: site.description,
-    locale: "en_IN",
   },
 };
 
@@ -44,7 +43,13 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${rajdhani.variable} ${inter.variable} antialiased`}>
+    // data-scroll-behavior: Next.js turns off the global smooth scroll during route changes,
+    // so navigation jumps to the top instantly while in-page anchors stay smooth.
+    <html
+      lang="en"
+      data-scroll-behavior="smooth"
+      className={`${rajdhani.variable} ${inter.variable} antialiased`}
+    >
       <body className="flex min-h-dvh flex-col">
         <SkipLink />
         <SiteHeader />

@@ -59,7 +59,7 @@ export function HomeHero() {
         </h1>
 
         <p className="mt-2 enter-rise type-label-lg text-fg [animation-delay:120ms]">
-          PCE&apos;s Flagship Annual Fest
+          {site.festLine}
         </p>
 
         {/* OD-07: tagline area kept, reference text not used */}

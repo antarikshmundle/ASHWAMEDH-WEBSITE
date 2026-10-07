@@ -1,4 +1,4 @@
-import type { EventVertical, Vertical } from "@/types/festival";
+import type { Vertical } from "@/types/festival";
 
 export interface VerticalInfo {
   id: Vertical;
@@ -60,5 +60,3 @@ export function getVertical(id: Vertical): VerticalInfo {
   if (!vertical) throw new Error(`Unknown vertical: ${id}`);
   return vertical;
 }
-
-export const eventVerticals: readonly EventVertical[] = ["technomedh", "cultural", "sports"];
