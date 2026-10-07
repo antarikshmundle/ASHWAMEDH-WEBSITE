@@ -4,7 +4,7 @@ import {
   TBA,
   dateTime,
   fact,
-  participation,
+  participationLabel,
   pdfState,
   registrationState,
 } from "@/lib/display";
@@ -19,11 +19,11 @@ describe("display helpers", () => {
     expect(dateTime("12 Feb", "10:00")).toBe("12 Feb · 10:00");
   });
 
-  it("derives participation only from official team size", () => {
-    expect(participation(null)).toBe(TBA);
-    expect(participation("1")).toBe("Individual");
-    expect(participation("1–3 members")).toBe("Individual / Team");
-    expect(participation("2-4 members")).toBe("Team");
+  it("labels participation only as officially stated (never derived from team size)", () => {
+    expect(participationLabel(null)).toBe(TBA);
+    expect(participationLabel("individual")).toBe("Individual");
+    expect(participationLabel("team")).toBe("Team");
+    expect(participationLabel("individual-or-team")).toBe("Individual / Team");
   });
 
   it("opens registration only with an official link", () => {

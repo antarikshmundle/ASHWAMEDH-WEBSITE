@@ -51,9 +51,9 @@ export function EventListing({ vertical }: { vertical: EventVertical }) {
                   </Link>
                 </li>
                 {list.map((event) => (
-                  <li key={event.id}>
+                  <li key={event.slug}>
                     <Link
-                      href={`/events/${event.id}`}
+                      href={`/events/${event.slug}`}
                       className="flex min-h-11 items-center rounded-md px-3 type-body-sm font-medium text-fg-secondary transition-colors hover:bg-white/[0.04] hover:text-fg"
                     >
                       {event.name}
@@ -82,7 +82,7 @@ export function EventListing({ vertical }: { vertical: EventVertical }) {
             <h2 className="sr-only">All {info.shortName} events</h2>
             <ul className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-5 lg:mt-10 lg:grid-cols-3 lg:gap-6">
               {list.map((event, i) => (
-                <li key={event.id}>
+                <li key={event.slug}>
                   <EventCard event={event} index={i} />
                 </li>
               ))}

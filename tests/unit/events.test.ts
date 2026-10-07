@@ -1,21 +1,23 @@
 import { describe, expect, it } from "vitest";
 import { events, getEventBySlug, getEventsByVertical } from "@/data/events";
 import { culturalNight, scheduleDays, scheduleRows } from "@/data/festival";
-import type { FestEvent } from "@/types/festival";
+import type { EventRecord } from "@/types/festival";
 
 /** Fields that are official-only and must stay null until official PDFs/forms arrive. */
-const OFFICIAL_ONLY: (keyof FestEvent)[] = [
+const OFFICIAL_ONLY: (keyof EventRecord)[] = [
   "description",
   "image",
   "rules",
   "eligibility",
   "teamSize",
   "registrationFee",
-  "prize",
+  "participation",
+  "prizePool",
+  "prizeDetails",
   "date",
   "time",
   "venue",
-  "coordinator",
+  "coordinators",
   "registrationDeadline",
   "registrationLink",
   "pdf",
@@ -42,7 +44,7 @@ describe("event inventory (master prompt §6)", () => {
   });
 
   it("has unique, URL-safe slugs", () => {
-    const ids = events.map((e) => e.id);
+    const ids = events.map((e) => e.slug);
     expect(new Set(ids).size).toBe(ids.length);
     for (const id of ids) expect(id).toMatch(/^[a-z0-9]+(-[a-z0-9]+)*$/);
     expect(getEventBySlug("sdgineer")?.name).toBe("SDGineer (Poster Presentation)");
@@ -57,7 +59,7 @@ describe("event inventory (master prompt §6)", () => {
 
   it("keeps every official-only field null and registration not open (D2)", () => {
     for (const e of events) {
-      for (const field of OFFICIAL_ONLY) expect(e[field], `${e.id}.${field}`).toBeNull();
+      for (const field of OFFICIAL_ONLY) expect(e[field], `${e.slug}.${field}`).toBeNull();
       expect(e.status).toBe("not-open");
     }
   });

@@ -1,4 +1,4 @@
-import type { FestEvent } from "@/types/festival";
+import type { EventRecord, Participation } from "@/types/festival";
 
 /**
  * The only place placeholder wording lives (docs/ux/states-and-ctas.md).
@@ -41,16 +41,15 @@ export function dateTime(date: string | null, time: string | null): string {
   return parts.length ? parts.join(" · ") : TBA;
 }
 
-/**
- * Participation type derived from the official team size wording.
- * "1" → Individual · ranges starting at 1 → Individual / Team · anything else → Team.
- */
-export function participation(teamSize: string | null): string {
-  const value = teamSize?.trim();
-  if (!value) return TBA;
-  if (/^1$/.test(value)) return "Individual";
-  if (/^1\s*[-–to]/i.test(value)) return "Individual / Team";
-  return "Team";
+const participationLabels: Record<Participation, string> = {
+  individual: "Individual",
+  team: "Team",
+  "individual-or-team": "Individual / Team",
+};
+
+/** Participation as stated by the official source — never derived from the team size. */
+export function participationLabel(participation: Participation | null): string {
+  return participation ? participationLabels[participation] : TBA;
 }
 
 export type RegistrationState =
@@ -60,7 +59,7 @@ export type RegistrationState =
 
 /** Primary CTA state (docs/ux/event-discovery.md §8). Opens only with an official link. */
 export function registrationState(
-  event: Pick<FestEvent, "registrationLink" | "status">,
+  event: Pick<EventRecord, "registrationLink" | "status">,
 ): RegistrationState {
   if (event.status === "closed") return { kind: "closed", label: "Registration Closed" };
   if (event.status === "open" && event.registrationLink) {

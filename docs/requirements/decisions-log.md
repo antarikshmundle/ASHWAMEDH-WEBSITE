@@ -3,6 +3,31 @@
 Clarifications and corrections from the project owner. These take precedence over
 [master-prompt-v1.md](./master-prompt-v1.md) where they conflict. Newest first.
 
+## 2026-10-07 — Phase 6 (Event/Data Architecture)
+
+Owner-approved decisions (P6-1 … P6-7, as recommended in the Phase 6 plan):
+
+| #    | Decision                                                                                                                                                            |
+| ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| P6-1 | The event key is an explicit `slug` (replaces the derived `id`).                                                                                                    |
+| P6-2 | `eligibility` is a list of paragraphs (`string[]`), like `description`.                                                                                             |
+| P6-3 | `participation` (`individual` / `team` / `individual-or-team`) is an explicit field, stated by the official source. It is never derived from the team-size wording. |
+| P6-4 | Every official details entry records its source (`ContentSource`: kind, reference, date). Enforced by type, at compile time and at build time.                      |
+| P6-5 | Legacy-slug redirect mechanism is implemented now with zero entries; a former slug is added only after an official rename.                                          |
+| P6-6 | Dates and times stay free-text official wording; structured dates wait for the official schedule.                                                                   |
+| P6-7 | No schedule day tabs (`scheduleDays`) in Phase 6 — no UI without official data.                                                                                     |
+
+Implementation notes:
+
+| #   | Note                                                                                                                                                                                                                                                                                   |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| E1  | Event data lives in `src/data/events/`: `inventory.ts` (39 frozen identities, explicit slugs, fixed order), `details.ts` (official details by slug — empty), `build.ts` (`buildEvent()`), `slugs.ts` (slug index and redirects), `index.ts` (public API, import path `@/data/events`). |
+| E2  | All 39 slugs equal the slug rule applied to the official names (unchanged URLs). A frozen snapshot test locks slug, name, vertical, department and order.                                                                                                                              |
+| E3  | `prize` split into `prizePool` (Prize Pool chip) and `prizeDetails` (Prizes tab); `coordinator` renamed `coordinators`. The UI reads `EventRecord`; the old `FestEvent` type is removed.                                                                                               |
+| E4  | Registration fields (`registrationLink`, `registrationDeadline`, `status`) pass through unchanged and are not validated — Phase 7.                                                                                                                                                     |
+| E5  | Redirects: a former slug is prerendered and answers **308** with `location: /events/<slug>` (verified on `next start`). The static HTML also carries Next's client-side redirect marker for static hosting. Re-verify on the final host once hosting is decided (D6).                  |
+| E6  | Authoring guide: [docs/content/event-data.md](../content/event-data.md).                                                                                                                                                                                                               |
+
 ## 2026-10-07 — Phase 4 (High-fidelity UI) — implementation notes, pending review
 
 | #   | Note                                                                                                                                                                                                                                                                                                                                                                                                                  |

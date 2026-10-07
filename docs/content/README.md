@@ -24,7 +24,8 @@ Nothing in this table may be invented — unknown values stay `null` in data and
 | Final branding / palette                         | ⚫ Not finalized                                                                                                                                          |
 
 When an official PDF arrives, store it in this folder (or `public/` once it is meant to be downloadable)
-and update the matching event entry in `src/data/`.
+and add the event's details to `src/data/events/details.ts` — see the
+[event data authoring guide](event-data.md).
 
 ## Phase 1 content dependencies by page
 

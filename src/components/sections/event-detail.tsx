@@ -20,22 +20,22 @@ import { getVertical } from "@/data/verticals";
 import {
   dateTime,
   fact,
-  participation,
+  participationLabel,
   pdfState,
   placeholders,
   registrationState,
 } from "@/lib/display";
-import type { FestEvent } from "@/types/festival";
+import type { EventRecord } from "@/types/festival";
 
 /**
  * Reusable event-detail template (reference panel 05, docs/ux/event-discovery.md §7).
  * Every field renders from data; unknown values show TBA / Coming Soon in place.
  */
-export function EventDetail({ event }: { event: FestEvent }) {
+export function EventDetail({ event }: { event: EventRecord }) {
   const vertical = getVertical(event.category);
   const registration = registrationState(event);
   const pdf = pdfState(event.pdf);
-  const variant = getEventsByVertical(event.category).findIndex((e) => e.id === event.id);
+  const variant = getEventsByVertical(event.category).findIndex((e) => e.slug === event.slug);
 
   const primaryCta =
     registration.kind === "open" ? (
@@ -87,7 +87,7 @@ export function EventDetail({ event }: { event: FestEvent }) {
                   icon={Users}
                   tone="warm"
                   label="Participation"
-                  value={participation(event.teamSize)}
+                  value={participationLabel(event.participation)}
                 />
                 <Chip
                   icon={Ticket}
@@ -95,7 +95,7 @@ export function EventDetail({ event }: { event: FestEvent }) {
                   label="Registration Fee"
                   value={fact(event.registrationFee)}
                 />
-                <Chip icon={Award} tone="warm" label="Prize Pool" value={fact(event.prize)} />
+                <Chip icon={Award} tone="warm" label="Prize Pool" value={fact(event.prizePool)} />
                 <Chip
                   icon={CalendarDays}
                   tone="field"
@@ -148,7 +148,9 @@ export function EventDetail({ event }: { event: FestEvent }) {
               {
                 id: "about",
                 label: "About",
-                content: <TextOr value={event.description} fallback={placeholders.description} />,
+                content: (
+                  <ParagraphsOr items={event.description} fallback={placeholders.description} />
+                ),
               },
               {
                 id: "rules",
@@ -158,12 +160,14 @@ export function EventDetail({ event }: { event: FestEvent }) {
               {
                 id: "eligibility",
                 label: "Eligibility",
-                content: <TextOr value={event.eligibility} fallback={placeholders.eligibility} />,
+                content: (
+                  <ParagraphsOr items={event.eligibility} fallback={placeholders.eligibility} />
+                ),
               },
               {
                 id: "prizes",
                 label: "Prizes",
-                content: <TextOr value={event.prize} fallback={placeholders.prizes} />,
+                content: <ParagraphsOr items={event.prizeDetails} fallback={placeholders.prizes} />,
               },
               {
                 id: "venue",
@@ -183,9 +187,9 @@ export function EventDetail({ event }: { event: FestEvent }) {
               {
                 id: "coordinator",
                 label: "Coordinator",
-                content: event.coordinator?.length ? (
+                content: event.coordinators?.length ? (
                   <ul className="flex flex-col gap-3">
-                    {event.coordinator.map((c, i) => (
+                    {event.coordinators.map((c, i) => (
                       // Static, never-reordered list: index keys can't collide on repeated names.
                       <li key={i} className="type-body text-fg-secondary">
                         <span className="font-semibold text-fg">{c.name}</span>
@@ -226,6 +230,21 @@ function TextOr({ value, fallback }: { value: string | null; fallback: string })
     <p className="type-body text-fg-secondary">{value}</p>
   ) : (
     <ComingSoon>{fallback}</ComingSoon>
+  );
+}
+
+/** Official text, one paragraph per item. */
+function ParagraphsOr({ items, fallback }: { items: string[] | null; fallback: string }) {
+  if (!items?.length) return <ComingSoon>{fallback}</ComingSoon>;
+  return (
+    <div className="flex flex-col gap-4">
+      {items.map((paragraph, i) => (
+        // Static, never-reordered list: index keys cannot collide on repeated text.
+        <p key={i} className="type-body text-fg-secondary">
+          {paragraph}
+        </p>
+      ))}
+    </div>
   );
 }
 

@@ -87,22 +87,26 @@ Events overview
 
 ### Field placement
 
+Field names follow the Phase 6 data model (`EventRecord`, see [../content/event-data.md](../content/event-data.md)).
+
 | Field                  | Where it appears                                                                                                     | Display when `null`                                    |
 | ---------------------- | -------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
-| `id`                   | URL slug, internal key                                                                                               | — (always present)                                     |
+| `slug`                 | URL slug (explicit, frozen in the inventory), internal key                                                           | — (always present)                                     |
 | `name`                 | `h1`; card title; sidebar; page `<title>`                                                                            | — (always present)                                     |
 | `category`             | "Back to {Vertical}" link; nav active state; vertical theme                                                          | — (always present)                                     |
 | `department`           | Line under the title (the slot the reference uses for "Code · Collaborate · Create") and listing card (OD-07, OD-16) | Line omitted (Sports)                                  |
-| `description`          | **About** tab                                                                                                        | "Details coming soon."                                 |
+| `description`          | **About** tab — one paragraph per item                                                                               | "Details coming soon."                                 |
 | `image`                | Hero image (right) and listing card                                                                                  | Abstract vertical placeholder                          |
-| `teamSize`             | Chips "Participation" (derived) and "Team Size"                                                                      | TBA                                                    |
+| `participation`        | Chip "Participation" and listing card meta — stated by the official source, never derived from `teamSize` (P6-3)     | TBA                                                    |
+| `teamSize`             | Chip "Team Size" (official wording)                                                                                  | TBA                                                    |
 | `registrationFee`      | Chip "Registration Fee"                                                                                              | TBA                                                    |
-| `prize`                | Chip "Prize Pool" + **Prizes** tab (full breakdown)                                                                  | Chip: TBA · Tab: "Prize details coming soon."          |
+| `prizePool`            | Chip "Prize Pool" (short value)                                                                                      | TBA                                                    |
+| `prizeDetails`         | **Prizes** tab (full breakdown)                                                                                      | "Prize details coming soon."                           |
 | `date`, `time`         | Chip "Date & Time" (combined)                                                                                        | TBA                                                    |
 | `venue`                | Chip "Venue" + **Venue** tab (with link to `/venue`)                                                                 | Chip: TBA · Tab: "Venue will be announced."            |
 | `rules`                | **Rules** tab                                                                                                        | "Rules will be published with the official event PDF." |
-| `eligibility`          | **Eligibility** tab                                                                                                  | "Eligibility details coming soon."                     |
-| `coordinator`          | **Coordinator** tab                                                                                                  | "Coordinator details will be announced."               |
+| `eligibility`          | **Eligibility** tab — one paragraph per item                                                                         | "Eligibility details coming soon."                     |
+| `coordinators`         | **Coordinator** tab                                                                                                  | "Coordinator details will be announced."               |
 | `registrationDeadline` | Small line under the CTA row, **only while registration is open**                                                    | Hidden (CTA already says "Registration Opening Soon")  |
 | `registrationLink`     | "Register Now" (primary CTA)                                                                                         | CTA disabled: "Registration Opening Soon"              |
 | `pdf`                  | "Download Event PDF" (secondary CTA)                                                                                 | CTA disabled: "Event PDF Coming Soon"                  |

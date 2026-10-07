@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { VerticalArt } from "@/components/art/vertical-art";
 import { eventImageSrc } from "@/lib/media";
-import type { FestEvent } from "@/types/festival";
+import type { EventRecord } from "@/types/festival";
 
 /**
  * Event artwork slot (event cards and the event-detail header). Renders the official event
@@ -17,7 +17,7 @@ export function EventImage({
   sizes,
   preload = false,
 }: {
-  event: Pick<FestEvent, "image" | "category">;
+  event: Pick<EventRecord, "image" | "category">;
   /** Abstract-art variant, so placeholders in a grid don't repeat. */
   variant: number;
   /** `sizes` for the responsive image, matching the slot's rendered width. */

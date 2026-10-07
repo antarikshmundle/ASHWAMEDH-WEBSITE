@@ -8,7 +8,7 @@ import { useId, useState } from "react";
  * Mobile/tablet replacement for the listing sidebar (docs/ux/mobile.md → Event listing):
  * a disclosure that lists every event of the vertical as direct links.
  */
-export function JumpToEvent({ events }: { events: readonly { id: string; name: string }[] }) {
+export function JumpToEvent({ events }: { events: readonly { slug: string; name: string }[] }) {
   const [open, setOpen] = useState(false);
   const panelId = useId();
 
@@ -29,9 +29,9 @@ export function JumpToEvent({ events }: { events: readonly { id: string; name: s
       </button>
       <ul id={panelId} hidden={!open} className="border-t border-line-subtle py-1">
         {events.map((event) => (
-          <li key={event.id}>
+          <li key={event.slug}>
             <Link
-              href={`/events/${event.id}`}
+              href={`/events/${event.slug}`}
               className="flex min-h-11 items-center px-4 type-body-sm text-fg-secondary hover:bg-white/[0.04] hover:text-fg"
             >
               {event.name}

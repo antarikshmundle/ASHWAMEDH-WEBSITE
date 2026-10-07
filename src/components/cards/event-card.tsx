@@ -1,18 +1,18 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { EventImage } from "@/components/ui/event-image";
-import { fact, participation } from "@/lib/display";
-import type { FestEvent } from "@/types/festival";
+import { fact, participationLabel } from "@/lib/display";
+import type { EventRecord } from "@/types/festival";
 
 /**
  * Event card (reference panel 04, docs/design-system/components.md → Event cards).
  * Whole card is one link to /events/[slug]; department shown per OD-16 (omitted for Sports).
  */
-export function EventCard({ event, index = 0 }: { event: FestEvent; index?: number }) {
+export function EventCard({ event, index = 0 }: { event: EventRecord; index?: number }) {
   return (
     <Link
-      href={`/events/${event.id}`}
-      id={`event-${event.id}`}
+      href={`/events/${event.slug}`}
+      id={`event-${event.slug}`}
       className="group flex h-full scroll-mt-28 flex-col overflow-hidden rounded-lg border border-line bg-surface transition-[transform,border-color,box-shadow] duration-150 ease-[var(--ease-standard)] hover:-translate-y-0.5 hover:border-accent/55 hover:shadow-card"
     >
       <div className="relative aspect-video overflow-hidden">
@@ -28,7 +28,7 @@ export function EventCard({ event, index = 0 }: { event: FestEvent; index?: numb
         {event.department && <p className="type-meta text-fg-secondary">{event.department}</p>}
         <p className="type-meta text-fg-muted">
           <span className="sr-only">Participation: </span>
-          {participation(event.teamSize)}
+          {participationLabel(event.participation)}
           <span aria-hidden className="mx-2 text-line-strong">
             |
           </span>
