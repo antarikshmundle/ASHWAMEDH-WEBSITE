@@ -1,13 +1,46 @@
-import { site } from "@/data/site";
+import { ArrowLink } from "@/components/ui/button";
+import { CulturalNightBand } from "@/components/sections/cultural-night-band";
+import { HomeHero } from "@/components/sections/home-hero";
+import { SchedulePanel } from "@/components/sections/schedule-panel";
+import { VenueMap } from "@/components/sections/venue-map";
+import { VerticalsOverview } from "@/components/sections/verticals-overview";
 
-// Phase 0 placeholder. The homepage is built in Phase 4/5 from the locked UI/UX reference.
+/**
+ * Homepage — locked order (docs/ux/homepage.md, OD-11):
+ * Hero → Four verticals → Schedule preview → Cultural Night preview → Venue preview → (Footer).
+ * No "Featured Events" section.
+ */
 export default function HomePage() {
   return (
-    <main className="flex flex-1 flex-col items-center justify-center gap-2 p-6 text-center">
-      <h1 className="text-2xl font-semibold tracking-wide">{site.name}</h1>
-      <p className="text-sm opacity-70">
-        {site.college}, {site.city}
-      </p>
-    </main>
+    <>
+      <HomeHero />
+
+      <VerticalsOverview id="explore" />
+
+      <section
+        data-vertical="brand"
+        aria-labelledby="schedule-title"
+        className="section-y pt-0 lg:pt-0"
+      >
+        <div className="container-site max-w-5xl">
+          <SchedulePanel />
+          <div className="mt-6 flex justify-center">
+            <ArrowLink href="/schedule">View Schedule</ArrowLink>
+          </div>
+        </div>
+      </section>
+
+      <section aria-labelledby="cultural-night-title" className="pb-16 md:pb-20 lg:pb-28">
+        <div className="container-site">
+          <CulturalNightBand showLink />
+        </div>
+      </section>
+
+      <section aria-labelledby="venue-title" className="pb-16 md:pb-20 lg:pb-28">
+        <div className="container-site">
+          <VenueMap showLink />
+        </div>
+      </section>
+    </>
   );
 }

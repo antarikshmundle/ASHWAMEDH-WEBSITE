@@ -3,7 +3,7 @@
 Official website of **ASHWAMEDH 2026** — the flagship annual college festival of
 **Priyadarshini College of Engineering (PCE), Nagpur**.
 
-> Status: **Phase 2 locked · Phase 3 Design System locked.** No UI has been implemented yet.
+> Status: **Phases 0, 2, 3 locked · Phase 4 — High-fidelity UI (in review).** Official event content is still TBA.
 
 ## Requirements
 

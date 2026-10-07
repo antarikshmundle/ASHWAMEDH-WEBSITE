@@ -1,0 +1,114 @@
+/*
+ * ASHWAMEDH 2026 — design tokens (Phase 3, locked).
+ * Source of truth: docs/design-system/. Change values here only; components never hard-code colours.
+ *
+ * Provisional / replaceable by official 2026 branding (no redesign needed):
+ *   --brand-ember*            DS-02 (provisional, reference-derived — NOT the official brand colour)
+ *   --vertical-*              DS-03 (functional accents)
+ */
+
+:root {
+  /* Brand accent — PROVISIONAL (DS-02) */
+  --brand-ember: #f08a3c;
+  --brand-ember-strong: #e2672a;
+
+  /* Vertical functional accents (DS-03) */
+  --vertical-technomedh: #4fb8ec;
+  --vertical-technomedh-strong: #17a6fc;
+  --vertical-cultural: #f2b347;
+  --vertical-cultural-strong: #e89a2c;
+  --vertical-sports: #3bd5b5;
+  --vertical-sports-strong: #1fbf9c;
+  --vertical-cultural-night: #c964d4;
+  --vertical-cultural-night-strong: #b44fc2;
+
+  /* Context accent: brand globally, vertical inside [data-vertical] */
+  --accent: var(--brand-ember);
+  --accent-strong: var(--brand-ember-strong);
+}
+
+[data-vertical="technomedh"] {
+  --accent: var(--vertical-technomedh);
+  --accent-strong: var(--vertical-technomedh-strong);
+}
+[data-vertical="cultural"] {
+  --accent: var(--vertical-cultural);
+  --accent-strong: var(--vertical-cultural-strong);
+}
+[data-vertical="sports"] {
+  --accent: var(--vertical-sports);
+  --accent-strong: var(--vertical-sports-strong);
+}
+[data-vertical="cultural-night"] {
+  --accent: var(--vertical-cultural-night);
+  --accent-strong: var(--vertical-cultural-night-strong);
+}
+[data-vertical="brand"] {
+  --accent: var(--brand-ember);
+  --accent-strong: var(--brand-ember-strong);
+}
+
+@theme {
+  /* Typography (DS-01) — families are injected by next/font in the root layout */
+  --font-display: var(--font-rajdhani), "Rajdhani", "Arial Narrow", system-ui, sans-serif;
+  --font-body: var(--font-inter), "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-sans: var(--font-body);
+
+  /* Backgrounds and surfaces */
+  --color-base: #03060b;
+  --color-raised: #060c15;
+  --color-surface: #08121d;
+  --color-surface-2: #0c1824;
+  --color-surface-3: #142a3c;
+  --color-plate: #f2f5fa;
+
+  /* Text */
+  --color-fg: #f2f5fa;
+  --color-fg-secondary: #bec6d3;
+  --color-fg-muted: #8d99ab;
+  --color-fg-disabled: #5e6a7c;
+  --color-on-accent: #03060b;
+
+  /* Borders */
+  --color-line-subtle: #16222f;
+  --color-line: #243446;
+  --color-line-strong: #3a4d63;
+  --color-line-control: #56708c;
+
+  /* Focus */
+  --color-focus: #f2f5fa;
+
+  /* Chip palette (DS-07) — field-based, identical in every vertical */
+  --color-chip-warm: #f2b347;
+  --color-chip-warm-tile: #3a2208;
+  --color-chip-field: #e6cf5c;
+  --color-chip-field-tile: #1c2a14;
+  --color-chip-people: #a99bff;
+  --color-chip-people-tile: #1e1d63;
+
+  /* Radius */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+
+  /* Elevation */
+  --shadow-card: 0 8px 24px rgb(0 0 0 / 0.45);
+  --shadow-panel: 0 16px 48px rgb(0 0 0 / 0.55);
+
+  /* Motion */
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+}
+
+@theme inline {
+  /* Context accent exposed as utilities: text-accent, bg-accent, border-accent/55 … */
+  --color-accent: var(--accent);
+  --color-accent-strong: var(--accent-strong);
+  --color-ember: var(--brand-ember);
+  --color-technomedh: var(--vertical-technomedh);
+  --color-cultural: var(--vertical-cultural);
+  --color-sports: var(--vertical-sports);
+  --color-cultural-night: var(--vertical-cultural-night);
+}

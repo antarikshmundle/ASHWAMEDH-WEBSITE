@@ -20,6 +20,8 @@ Tags: **[A]** reference · **[B]** confirmed · **[C]** TBA · **[OD-xx]** locke
 | CTA (right)   | One outlined element labelled **"Coming Soon"**. It is **non-clickable / disabled** and links nowhere (OD-12). It is rendered as a non-interactive status element, not a link: it is not in the tab order and announces as "Coming Soon". It becomes an active CTA only when official launch information defines one. |
 | Active state  | A single indicator under the active item (the reference underlines "Home").                                                                                                                                                                                                                                           |
 
+**Breakpoint (Phase 4 visual review):** the full desktop bar shows from **1280 px**. Below 1280 px the top bar + menu button (§3) is used, because 1024–1279 px was too narrow for the PCE identity, eight items and the CTA on one line.
+
 ### Active-state mapping
 
 | Current route                                                      | Active item                 |

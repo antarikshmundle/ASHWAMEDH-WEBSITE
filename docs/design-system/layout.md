@@ -18,14 +18,14 @@ Only these values are used. Any one-off value needs a token.
 
 Aligned with the Tailwind defaults, so no custom configuration is needed.
 
-| Token    | Min width | Name used in docs                           |
-| -------- | --------- | ------------------------------------------- |
-| —        | 0         | Mobile (phone portrait, designed at 360 px) |
-| `bp.sm`  | 640 px    | Large phone / small tablet                  |
-| `bp.md`  | 768 px    | Tablet                                      |
-| `bp.lg`  | 1024 px   | Laptop: desktop navbar appears              |
-| `bp.xl`  | 1280 px   | Desktop                                     |
-| `bp.2xl` | 1536 px   | Large screens                               |
+| Token    | Min width | Name used in docs                                            |
+| -------- | --------- | ------------------------------------------------------------ |
+| —        | 0         | Mobile (phone portrait, designed at 360 px)                  |
+| `bp.sm`  | 640 px    | Large phone / small tablet                                   |
+| `bp.md`  | 768 px    | Tablet                                                       |
+| `bp.lg`  | 1024 px   | Laptop                                                       |
+| `bp.xl`  | 1280 px   | Desktop: full desktop navbar appears (Phase 4 visual review) |
+| `bp.2xl` | 1536 px   | Large screens                                                |
 
 ## Containers and widths
 
@@ -123,7 +123,7 @@ The reference uses moderately rounded corners. **No clipped or angled corners.**
 
 | Area                   | Mobile (< 768)                                                                          | Tablet (768–1023)                           | Desktop (≥ 1024)                                                                                                                                                                                                                                          |
 | ---------------------- | --------------------------------------------------------------------------------------- | ------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Navbar                 | Top bar (64 px): logo + menu button; full-screen overlay menu                           | Same as mobile                              | Full bar (80 px over the hero, 72 px when sticky): logo, 8 items, status CTA                                                                                                                                                                              |
+| Navbar                 | Top bar (64 px): logo + menu button; full-screen overlay menu                           | Same as mobile (menu button up to 1279 px)  | From 1280 px: full bar (80 px over the hero, 72 px when sticky): logo, 8 items, status CTA                                                                                                                                                                |
 | Hero                   | Height `100svh`, min 560; logo width `min(78vw, 360px)`; **word stacks hidden** (DS-08) | Logo up to 440 px; word stacks at the sides | Logo at reference size (≈ 45 % of hero width, max 640 px); word stacks at left/right. Final hero logo sizes require the official high-resolution asset; until then the logo stays ≤ 203 CSS px ([logos.md](logos.md#resolution-requirement-ds-06), DS-06) |
 | Type                   | Lower clamp bound                                                                       | Interpolated                                | Upper clamp bound                                                                                                                                                                                                                                         |
 | Listing sidebar        | Replaced by a "Jump to event" control                                                   | Same as mobile                              | Sticky sidebar (top = nav height + 24)                                                                                                                                                                                                                    |
