@@ -5,7 +5,7 @@ import { EventCard } from "@/components/cards/event-card";
 import { CopyPlaceholder } from "@/components/ui/copy-placeholder";
 import { JumpToEvent } from "@/components/ui/jump-to-event";
 import { VerticalIcon } from "@/components/ui/vertical-icon";
-import { getEventsByVertical } from "@/data/events";
+import { loadEventsByVertical } from "@/lib/cms/events";
 import { getVertical } from "@/data/verticals";
 import type { EventVertical } from "@/types/festival";
 
@@ -13,9 +13,10 @@ import type { EventVertical } from "@/types/festival";
  * Reusable vertical listing (reference panel 04, docs/ux/event-discovery.md §6).
  * Desktop: sticky sidebar + 3-column grid. Mobile/tablet: "Jump to event" + 1/2-column grid.
  */
-export function EventListing({ vertical }: { vertical: EventVertical }) {
+export async function EventListing({ vertical }: { vertical: EventVertical }) {
   const info = getVertical(vertical);
-  const list = getEventsByVertical(vertical);
+  // Content from the CMS source (repository or database, src/lib/cms/events.ts).
+  const list = await loadEventsByVertical(vertical);
 
   return (
     <div data-vertical={vertical} className="relative">

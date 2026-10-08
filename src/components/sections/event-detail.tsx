@@ -190,6 +190,7 @@ export function EventDetail({ event }: { event: EventRecord }) {
                       // Static, never-reordered list: index keys can't collide on repeated names.
                       <li key={i} className="type-body text-fg-secondary">
                         <span className="font-semibold text-fg">{c.name}</span>
+                        {c.designation && <> · {c.designation}</>}
                         {c.phone && <> · {c.phone}</>}
                         {c.email && <> · {c.email}</>}
                       </li>

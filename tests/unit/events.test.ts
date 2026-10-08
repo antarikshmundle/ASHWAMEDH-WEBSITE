@@ -73,7 +73,8 @@ describe("festival content", () => {
     ]);
     expect(culturalNight.nights).toHaveLength(2);
     expect(culturalNight.nights.every((n) => n.date === null)).toBe(true);
-    expect(culturalNight.registrationLink).toBeNull();
+    // No registration for Cultural Night (OD-14, D7-7): the field does not exist at all.
+    expect("registrationLink" in culturalNight).toBe(false);
   });
 
   it("has no invented schedule days, times or venues (OD-04, OD-05)", () => {

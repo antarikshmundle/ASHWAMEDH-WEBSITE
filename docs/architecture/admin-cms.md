@@ -5,8 +5,9 @@ without editing the repository. **Content** becomes admin-editable; **design** (
 typography, motion, navigation, components) stays developer-controlled. The CMS is purpose-built for
 ASHWAMEDH — not a general page builder: no arbitrary HTML, CSS or scripts.
 
-Status: **10.0 architecture** (this document) and **10.1 authentication** are done. Nothing is
-editable yet; the public site still reads its content from the repository.
+Status: **10.0 architecture**, **10.1 authentication** and **10.2 database + storage** are done.
+Nothing is editable through the admin yet; by default the public site still reads its content from
+the repository (`CMS_CONTENT_SOURCE`, below).
 
 ## 10.0 — Findings (baseline 5314e95)
 
@@ -29,7 +30,7 @@ editable yet; the public site still reads its content from the repository.
 | O   | Secrets / configuration    | See [Environment](#environment). None is exposed to the browser (no `NEXT_PUBLIC_` prefix).                                                                                                                                                                                                       |
 
 Also found: `culturalNight.registrationLink` in `src/data/festival.ts` is unused and unvalidated. It
-will not be carried into the CMS schema (Cultural Night has no registration — OD-14, D7-7).
+will not be carried into the CMS schema (Cultural Night has no registration — OD-14, D7-7). Removed in 10.2.
 
 ## Selected architecture
 
@@ -43,10 +44,7 @@ Public visitor ──► static pages ◄── data layer ── buildEvent() /
 
 - **Why:** smallest design that meets the requirement (edit without the repository) while keeping the
   site static and every Phase 6–7 rule enforced on the server.
-- **Database and storage provider — owner decision before 10.2.** Requirements: managed PostgreSQL
-  (point-in-time recovery) and S3-compatible or platform object storage, both reachable from the chosen
-  host. Typical fits: Vercel → Vercel Postgres/Neon + Vercel Blob; self-hosted → PostgreSQL + S3/R2.
-  Nothing is installed until hosting is decided.
+- **Database and storage provider:** Supabase PostgreSQL + Supabase Storage (owner decision, 10.2).
 - Guidelines PDF links keep the D7-8 rule; uploaded files will be served from the storage host, which
   the PDF/image validators will allow explicitly.
 
@@ -71,23 +69,146 @@ Public visitor ──► static pages ◄── data layer ── buildEvent() /
    host's environment settings (production). Never commit them.
 4. To change the password, replace the hash; to sign everyone out, rotate the secret.
 
+## 10.2 — Database and storage (implemented)
+
+**Decision (owner):** Supabase PostgreSQL for content and Supabase Storage for files.
+**Supabase Auth is not used.** Admin sign-in stays the project's own (10.1): one administrator, no
+public accounts, and nothing in the database depends on Supabase users or roles. The site talks to
+Supabase only from the server, with the service-role key.
+
+### Data flow
+
+```
+repository: inventory.ts (identity, frozen)   database: events_content + event_coordinators + cms_files
+                         \                     /
+                  src/lib/cms/events.ts (loadEvents / loadEvent / loadEventsByVertical)
+                                   ↓
+                    buildEvent() — the same validation as before (D7 links, source, coordinators)
+                                   ↓
+                  display.ts (TBA / Coming Soon) → components → static pages
+```
+
+- `CMS_CONTENT_SOURCE` chooses the content source: `repository` (default — `src/data/events/details.ts`,
+  no credentials, exactly the Phase 8 output) or `database`. In `database` mode, missing credentials or
+  an unreachable database **fail the build** with a clear message; repository content is never
+  published silently instead.
+- An event without a database row falls back to its repository details. Rows whose slug is not in the
+  inventory are ignored by the site and reported by the seed.
+- Identity (name, slug, department, vertical) always comes from the repository. The database cannot
+  create, delete, rename or move events.
+
+### Static pages and revalidation
+
+- Public reads use `fetch` with `cache: "force-cache"` and Next.js cache tags (no `cacheComponents`
+  switch, so the rest of the app is unchanged). Pages are prerendered at build time and stay static;
+  serving a page does not query the database.
+- Tags: `cms:events` (all rows — the three listing pages) and `cms:event:<slug>` (one event page).
+- `expireEventContent(slug)` (`src/lib/cms/revalidate.ts`, admin-only) calls `updateTag` for that event
+  and the listings only. The admin editors (10.3+) call it from their Server Actions after a save; the
+  next visit renders fresh content. Other event pages keep their cache.
+- If a regeneration fails (database down, invalid row), Next.js keeps serving the last good page.
+
+### Schema (`supabase/migrations/`)
+
+| Table                | Key                   | Holds                                                                                                                                                                                                                                                             |
+| -------------------- | --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `events_content`     | `event_slug` (PK)     | Description, rules, eligibility (text arrays), participation, team size, fee, date, time, venue, image (file or `/images/events/` path), guidelines (file or https / `/docs/` link), registration status / link / deadline, source (`kind`, `reference`, `date`). |
+| `event_coordinators` | `id`; FK `event_slug` | Name, designation, phone, email, `sort_order` (unique per event). Deleted with their event row.                                                                                                                                                                   |
+| `cms_files`          | `id` (uuid)           | Bucket, server-generated path, original name, MIME type, size, category (`document`, `event-image`, `gallery-image`, `team-image`, `logo`), alt text.                                                                                                             |
+
+Constraints mirror the domain rules: unknown values are `NULL` (blank strings are rejected); registration
+links must be official Google Forms and `open` needs one; any content needs a complete source; at most one
+image and one guidelines source; linked files must be of the right category (trigger); coordinator phone /
+email formats; file category ⇔ bucket ⇔ MIME ⇔ size limit; safe paths. No prize columns (Phase 7.6). No
+Cultural Night registration — the unused `culturalNight.registrationLink` was removed from the data model.
+Row-level security is on with no policies, and `anon` / `authenticated` have no privileges: only the
+server can read or write.
+
+**Revisions:** not yet. Phase 10.3 adds an `events_content_revisions` table (previous row and coordinators
+as JSON, plus when) written by the editor's save action, with restore from the admin UI.
+
+### Storage
+
+| Bucket                | Contents                                            | Types             | Limit |
+| --------------------- | --------------------------------------------------- | ----------------- | ----- |
+| `ashwamedh-documents` | Guidelines PDFs (`events/<slug>/…`)                 | `application/pdf` | 10 MB |
+| `ashwamedh-images`    | `events/<slug>/…`, `gallery/…`, `team/…`, `logos/…` | JPEG, PNG, WebP   | 5 MB  |
+
+- Two buckets so Storage itself enforces type and size per kind of file. Both are **public-read**: the
+  website links to guidelines PDFs and images directly. **No storage policies** are added, so anonymous or
+  signed-in Supabase users cannot upload, change or delete anything.
+- Object names are generated on the server (`<folder>[/<slug>]/<uuid>.<ext>`); the uploaded file name is
+  kept only as metadata.
+- `src/lib/cms/upload-policy.ts` checks every upload before Storage: the real type from the file's first
+  bytes (PDF, PNG, JPEG, WebP only — SVG, HTML, scripts, executables and archives are rejected), the
+  claimed type and the extension must match it, size limits, a safe file name. `src/lib/cms/files.ts`
+  (server-only) uploads and deletes after `requireAdmin()` and is not exposed as a route; the file manager
+  arrives in 10.4.
+- Event images from Storage are not displayed yet: `src/lib/media.ts` and `next.config.ts` still allow
+  only `/images/events/`. 10.4 adds the Storage host to both, together with the image manager.
+
+### Security boundaries
+
+- Service-role key: server environment only; used by `src/lib/cms/server.ts`, `events.ts`, `files.ts`,
+  `revalidate.ts` (all `server-only`) and the seed script. Unit tests fail if a client component imports
+  the CMS or Supabase, or if a `NEXT_PUBLIC_SUPABASE…` variable appears.
+- Every CMS mutation (`uploadCmsFile`, `deleteCmsFile`, `expireEventContent`) calls `requireAdmin()`
+  first. There is no public API route for the CMS.
+- The database repeats the validation (constraints, RLS), so a bug in the app cannot store an unsafe
+  registration link or file type.
+
+### Commands
+
+| Command                                                              | What it does                                                                                                                                                                                          |
+| -------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `npx supabase link --project-ref <ref>`, then `npx supabase db push` | Applies `supabase/migrations/*.sql` (schema, then buckets) to the project, in order.                                                                                                                  |
+| `npm run cms:seed`                                                   | One `events_content` row per inventory event, from the repository details. Inserts missing slugs only — never overwrites or deletes; safe to repeat. Fails unless there is exactly one row per event. |
+| `npm test`                                                           | Unit tests, including the migrations on an in-process PostgreSQL (PGlite). No credentials needed.                                                                                                     |
+| `npm run test:supabase`                                              | Live checks against a migrated project: seed idempotency, constraints, no anonymous access, PDF upload / public read / clean-up. Fails without credentials.                                           |
+
+### Local setup
+
+1. Without Supabase: nothing to do — `CMS_CONTENT_SOURCE` defaults to `repository`.
+2. With a Supabase project (or `npx supabase start` locally, URL `http://127.0.0.1:54321`): put
+   `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` in `.env.local`, apply the migrations, run
+   `npm run cms:seed`, then set `CMS_CONTENT_SOURCE=database` to build from the database.
+
+### Production setup
+
+1. Create the Supabase project (with backups / point-in-time recovery on the plan used).
+2. Apply the migrations with `npx supabase db push` — never from the running app.
+3. Set `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `CMS_CONTENT_SOURCE=database` and the admin variables
+   in the host's server environment.
+4. Run `npm run cms:seed` once (from a trusted machine or CI), then deploy.
+5. Later schema changes are new migration files, reviewed and applied the same way.
+
+### Known limitations
+
+- No editor UI yet; content changes still need the repository or SQL until 10.3.
+- The sign-in throttle is still per instance (it moves to the database later).
+- Storage images are not rendered until 10.4 (see above).
+- The seed fills missing rows only; it does not copy later repository edits into existing rows. Once
+  seeded, the database is the source of truth for content.
+
 ## Environment
 
-| Variable                             | Needed for                  | Notes                                                        |
-| ------------------------------------ | --------------------------- | ------------------------------------------------------------ |
-| `ADMIN_USERNAME`                     | 10.1 sign-in                | Server-only.                                                 |
-| `ADMIN_PASSWORD_HASH`                | 10.1 sign-in                | Server-only. Output of `npm run admin:hash`.                 |
-| `ADMIN_SESSION_SECRET`               | 10.1 sign-in                | Server-only, ≥ 32 characters, random.                        |
-| `NEXT_SERVER_ACTIONS_ENCRYPTION_KEY` | Multi-instance self-hosting | Stable key shared by all instances (Next.js Server Actions). |
-| Database / storage credentials       | 10.2+                       | Defined once the providers are chosen.                       |
+| Variable                             | Needed for                  | Notes                                                                          |
+| ------------------------------------ | --------------------------- | ------------------------------------------------------------------------------ |
+| `ADMIN_USERNAME`                     | 10.1 sign-in                | Server-only.                                                                   |
+| `ADMIN_PASSWORD_HASH`                | 10.1 sign-in                | Server-only. Output of `npm run admin:hash`.                                   |
+| `ADMIN_SESSION_SECRET`               | 10.1 sign-in                | Server-only, ≥ 32 characters, random.                                          |
+| `NEXT_SERVER_ACTIONS_ENCRYPTION_KEY` | Multi-instance self-hosting | Stable key shared by all instances (Next.js Server Actions).                   |
+| `CMS_CONTENT_SOURCE`                 | 10.2 public content         | `repository` (default) or `database`.                                          |
+| `SUPABASE_URL`                       | 10.2 database / storage     | `https://<project>.supabase.co` (http only for a local Supabase). Server-only. |
+| `SUPABASE_SERVICE_ROLE_KEY`          | 10.2 database / storage     | Service-role (secret) key. **Server-only — never `NEXT_PUBLIC_`.**             |
 
 ## Next milestones
 
-| Milestone | Scope                                                                                                                                                                                                                                            |
-| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 10.2      | Hosting + database decision; schema (event details by slug, coordinators, revisions, file metadata, settings); idempotent seed; data layer reading the database through `buildEvent()`; on-save revalidation. Public output must stay identical. |
-| 10.3      | Event editor (details, coordinators, registration with the D7 rules, source) with server-side validation and revisions.                                                                                                                          |
-| 10.4      | File manager (guidelines PDFs, event images) on object storage.                                                                                                                                                                                  |
-| 10.5      | Schedule (`scheduleDays` + rows), Cultural Night dates, festival settings, contact / footer / social links.                                                                                                                                      |
-| 10.6      | Gallery and Team (data model + public rendering of official content only).                                                                                                                                                                       |
-| 10.7      | QA, security review, backup / rollback drill, runbook.                                                                                                                                                                                           |
+| Milestone | Scope                                                                                                                                                                       |
+| --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 10.2      | Done — Supabase schema and storage, idempotent seed, database-backed data layer through `buildEvent()`, targeted revalidation helper.                                       |
+| 10.3      | Event editor (details, coordinators, registration with the D7 rules, source) with server-side validation, a revisions table with restore, and `expireEventContent` on save. |
+| 10.4      | File manager (guidelines PDFs, event images) on object storage.                                                                                                             |
+| 10.5      | Schedule (`scheduleDays` + rows), Cultural Night dates, festival settings, contact / footer / social links.                                                                 |
+| 10.6      | Gallery and Team (data model + public rendering of official content only).                                                                                                  |
+| 10.7      | QA, security review, backup / rollback drill, runbook.                                                                                                                      |

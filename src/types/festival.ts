@@ -47,6 +47,9 @@ export type RegistrationStatus = "not-open" | "open" | "closed";
 
 export interface Coordinator {
   name: string;
+  /** Official role, e.g. "Faculty Coordinator" — only as supplied. */
+  designation?: string | null;
+  /** Validated like festival contacts (src/lib/contact.ts); anything else fails the build. */
   phone: string | null;
   email: string | null;
 }

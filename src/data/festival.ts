@@ -32,8 +32,6 @@ export const culturalNight = {
   ],
   /** "What's On" — exactly the four confirmed components (OD-14). */
   whatsOn: ["Group Dance", "Singing", "Solo Dance", "Inauguration / Stage Performances"] as const,
-  /** No public registration by default (OD-14). */
-  registrationLink: null as string | null,
 };
 
 /**

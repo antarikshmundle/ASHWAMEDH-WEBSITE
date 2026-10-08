@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { notFound, permanentRedirect } from "next/navigation";
 import { EventDetail } from "@/components/sections/event-detail";
-import { events, getEventBySlug, legacyEventSlugs, resolveEventSlug } from "@/data/events";
+import { eventInventory, getEventBySlug, legacyEventSlugs, resolveEventSlug } from "@/data/events";
+import { loadEvent } from "@/lib/cms/events";
 import { site } from "@/data/site";
 import { getVertical } from "@/data/verticals";
 import { baseOpenGraph } from "@/lib/metadata";
@@ -13,7 +14,9 @@ import { baseOpenGraph } from "@/lib/metadata";
 export const dynamicParams = false;
 
 export function generateStaticParams() {
-  return [...events.map((event) => event.slug), ...legacyEventSlugs].map((slug) => ({ slug }));
+  return [...eventInventory.map((event) => event.slug), ...legacyEventSlugs].map((slug) => ({
+    slug,
+  }));
 }
 
 export async function generateMetadata({ params }: PageProps<"/events/[slug]">): Promise<Metadata> {
@@ -42,7 +45,8 @@ export default async function EventPage({ params }: PageProps<"/events/[slug]">)
   // Former URL after an official rename: 308 to the live page (one hop, never a loop).
   const resolved = resolveEventSlug(slug);
   if (resolved.kind === "legacy") permanentRedirect(`/events/${resolved.canonical}`);
-  const event = getEventBySlug(slug);
+  // Identity is frozen in the repository; content comes from the CMS source.
+  const event = await loadEvent(slug);
   if (!event) notFound();
   return <EventDetail event={event} />;
 }

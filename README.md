@@ -20,17 +20,19 @@ npm run dev                  # http://localhost:3000
 
 ## Scripts
 
-| Script                            | What it does                                      |
-| --------------------------------- | ------------------------------------------------- |
-| `npm run dev`                     | Start the dev server                              |
-| `npm run build`                   | Production build                                  |
-| `npm run start`                   | Serve the production build                        |
-| `npm run lint` / `lint:fix`       | ESLint                                            |
-| `npm run typecheck`               | TypeScript (strict)                               |
-| `npm run format` / `format:check` | Prettier (with Tailwind class sorting)            |
-| `npm run test` / `test:watch`     | Vitest                                            |
-| `npm run check`                   | typecheck + lint + format check + tests           |
-| `npm run admin:hash`              | Hash the admin password for `ADMIN_PASSWORD_HASH` |
+| Script                            | What it does                                           |
+| --------------------------------- | ------------------------------------------------------ |
+| `npm run dev`                     | Start the dev server                                   |
+| `npm run build`                   | Production build                                       |
+| `npm run start`                   | Serve the production build                             |
+| `npm run lint` / `lint:fix`       | ESLint                                                 |
+| `npm run typecheck`               | TypeScript (strict)                                    |
+| `npm run format` / `format:check` | Prettier (with Tailwind class sorting)                 |
+| `npm run test` / `test:watch`     | Vitest                                                 |
+| `npm run check`                   | typecheck + lint + format check + tests                |
+| `npm run admin:hash`              | Hash the admin password for `ADMIN_PASSWORD_HASH`      |
+| `npm run cms:seed`                | Seed the CMS database from the repository (idempotent) |
+| `npm run test:supabase`           | Live Supabase checks (needs credentials)               |
 
 ## Environment
 
@@ -40,6 +42,10 @@ npm run dev                  # http://localhost:3000
 | `ADMIN_USERNAME`       | For `/admin` | Admin sign-in name. Server-only.                                                                          |
 | `ADMIN_PASSWORD_HASH`  | For `/admin` | scrypt hash from `npm run admin:hash` — never the password. Server-only.                                  |
 | `ADMIN_SESSION_SECRET` | For `/admin` | ≥ 32 random characters; signs admin sessions. Server-only.                                                |
+
+| `CMS_CONTENT_SOURCE` | No | `repository` (default) or `database` (Supabase). |
+| `SUPABASE_URL` | For `database` | Supabase project URL. Server-only. |
+| `SUPABASE_SERVICE_ROLE_KEY` | For `database` | Service-role key. Server-only — never `NEXT_PUBLIC_`. |
 
 Without the three admin variables the public site works normally and `/admin` sign-in is disabled.
 See [docs/architecture/admin-cms.md](docs/architecture/admin-cms.md).

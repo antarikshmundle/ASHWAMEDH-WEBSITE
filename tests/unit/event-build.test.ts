@@ -90,8 +90,32 @@ describe("buildEvent", () => {
     expect(record.venue).toBeNull();
     expect(record.participation).toBe("team");
     expect(record.coordinators).toEqual([
-      { name: "A. Coordinator", phone: "+91 98765 43210", email: null },
+      { name: "A. Coordinator", designation: null, phone: "+91 98765 43210", email: null },
     ]);
+  });
+
+  it("keeps coordinator designations and rejects malformed phone numbers or emails (Phase 10.2)", () => {
+    const record = buildEvent(identity, {
+      source,
+      coordinators: [
+        {
+          name: "A. Coordinator",
+          designation: " Faculty Coordinator ",
+          phone: null,
+          email: "a@pce.ac.in",
+        },
+      ],
+    });
+    expect(record.coordinators?.[0]).toEqual({
+      name: "A. Coordinator",
+      designation: "Faculty Coordinator",
+      phone: null,
+      email: "a@pce.ac.in",
+    });
+    const bad = (phone: string | null, email: string | null) => () =>
+      buildEvent(identity, { source, coordinators: [{ name: "X", phone, email }] });
+    expect(bad("call me", null)).toThrow(/coordinator phone/);
+    expect(bad(null, "not-an-email")).toThrow(/coordinator email/);
   });
 
   describe("registration and PDF (Phase 7.3)", () => {

@@ -5,6 +5,7 @@ import type {
   EventIdentity,
   EventRecord,
 } from "@/types/festival";
+import { contactHref } from "@/lib/contact";
 import { pdfHref, registrationHref } from "@/lib/safe-url";
 
 const SOURCE_KINDS: readonly ContentSource["kind"][] = [
@@ -25,12 +26,22 @@ function list(values: readonly string[] | undefined): string[] | null {
   return items.length ? items : null;
 }
 
-function coordinatorList(values: readonly Coordinator[] | undefined): Coordinator[] | null {
+function coordinatorList(
+  slug: string,
+  values: readonly Coordinator[] | undefined,
+): Coordinator[] | null {
   const items = (values ?? []).flatMap((c) => {
     const name = text(c.name);
-    return name
-      ? [{ name, phone: text(c.phone ?? undefined), email: text(c.email ?? undefined) }]
-      : [];
+    if (!name) return [];
+    const phone = text(c.phone ?? undefined);
+    const email = text(c.email ?? undefined);
+    if (phone && !contactHref("phone", phone))
+      throw new Error(`Event "${slug}": coordinator phone "${phone}" is not a valid phone number.`);
+    if (email && !contactHref("email", email))
+      throw new Error(
+        `Event "${slug}": coordinator email "${email}" is not a valid email address.`,
+      );
+    return [{ name, designation: text(c.designation ?? undefined), phone, email }];
   });
   return items.length ? items : null;
 }
@@ -106,7 +117,7 @@ export function buildEvent(identity: EventIdentity, details?: EventDetailsInput)
     date: text(d.date),
     time: text(d.time),
     venue: text(d.venue),
-    coordinators: coordinatorList(d.coordinators),
+    coordinators: coordinatorList(slug, d.coordinators),
     pdf,
     registrationLink,
     registrationDeadline: text(d.registrationDeadline),
