@@ -18,12 +18,12 @@ export function VerticalCard({
     <Link
       href={vertical.href}
       data-vertical={vertical.id}
-      className="group relative flex aspect-[4/3.4] flex-col overflow-hidden rounded-lg bg-surface glow-sm transition-[transform,box-shadow] duration-150 ease-[var(--ease-standard)] hover:-translate-y-1 hover:glow-md sm:aspect-[3/4.4]"
+      className="group relative flex aspect-[4/3.4] flex-col overflow-hidden rounded-lg bg-surface glow-sm transition-[transform,box-shadow] duration-150 ease-[var(--ease-standard)] hover:glow-md focus-visible:glow-md motion-safe:hover:-translate-y-1 sm:aspect-[3/4.4]"
     >
       <div className="relative h-[62%] overflow-hidden">
         <VerticalArt
           vertical={vertical.id}
-          className="transition-transform duration-240 ease-[var(--ease-out)] group-hover:scale-[1.03]"
+          className="transition-transform duration-240 ease-[var(--ease-out)] motion-safe:group-hover:scale-[1.03]"
         />
         <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-surface to-transparent" />
       </div>
@@ -41,7 +41,7 @@ export function VerticalCard({
             {vertical.linkLabel}
             <ArrowRight
               aria-hidden
-              className="size-4 transition-transform duration-150 group-hover:translate-x-1"
+              className="size-4 transition-transform duration-150 motion-safe:group-hover:translate-x-1"
             />
           </span>
           <VerticalIcon name={vertical.icon} className="size-7 text-accent" />

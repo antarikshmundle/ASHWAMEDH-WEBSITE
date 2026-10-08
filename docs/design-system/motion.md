@@ -52,6 +52,45 @@ basic hover and focus. Motion must be smooth, cinematic, purposeful, lightweight
 Per-vertical hover character is defined in [verticals.md](verticals.md#matrix). It always stays within these
 tokens.
 
+## Implementation (Phase 8)
+
+CSS only — no animation library, no scroll listeners, no `requestAnimationFrame`, no timers. Easings live in
+`src/styles/tokens.css`; transitions without an explicit easing default to `ease.standard`. Durations use
+the token values directly (`duration-150` = fast, `duration-240` = base, 400 ms = slow, 700 ms =
+cinematic).
+
+| Pattern                 | Implemented behaviour                                                                                                             | Reduced motion                                  |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- |
+| Hero entrance           | `enter-rise` / `enter-fade`: logo → fest line → tagline → status, 120 ms steps; side stacks + cue at 480 ms; ≈ 1.2 s              | Not run — final state immediately               |
+| Logo transition (OD-13) | 240 ms opacity crossfade                                                                                                          | Instant swap                                    |
+| Navbar state            | Background, border and blur change over 240 ms                                                                                    | Instant                                         |
+| Card hover              | Vertical: 4 px lift + glow tier + art `scale(1.03)`; event: 2 px lift + border + shadow; 150 ms                                   | Glow / border / shadow only — no lift, no scale |
+| Keyboard focus          | Cards, schedule rows and buttons get their hover glow / border on `:focus-visible` (never the lift), plus the 2 px focus ring     | Same                                            |
+| Press                   | Primary button `scale(0.98)`                                                                                                      | No scale                                        |
+| Arrow / chevron nudges  | 2–4 px on hover, 150 ms                                                                                                           | None                                            |
+| Tabs                    | Indicator crossfade (240 ms) — approved; no sliding indicator                                                                     | Instant                                         |
+| Mobile menu             | Overlay fade 400 ms on a solid background (blur removed); items rise 8 px over 240 ms, 60 ms stagger capped at 5 steps (≤ 540 ms) | Not run — items shown immediately               |
+
+- Hover styles apply only on devices that can hover (Tailwind wraps `hover:` in `@media (hover: hover)`);
+  touch devices get no sticky hover.
+- Every hover / press / focus transform is written `motion-safe:…`; `tests/unit/motion.test.tsx` fails if
+  one is added without it, and checks that every entrance utility is switched off under reduced motion.
+- Vertical-card art zoom: kept after an A/B frame measurement (Phase 8.2, 1440 / 1024 / 768 px, 4× and 6×
+  CPU) showed no consistent cost over the variant without it; no `will-change` added.
+
+Intentional exceptions (not continuous motion):
+
+1. **Header compact state** — from 1280 px the bar goes from 80 px to 72 px tall over 240 ms when the hero
+   logo scrolls away (a height transition on one fixed element, once per crossing), with the background /
+   blur fade above.
+2. **Hero entrance** — the one cinematic sequence. It plays once per page load and again when the homepage is
+   re-entered through client-side navigation; it never blocks input or scrolling.
+
+Deferred to a later Advanced Interaction Pass (not rejected): scroll reveals, scroll-linked effects,
+parallax, cursor-follow / ambient cursor light, magnetic buttons, card tilt / 3D hover, page transitions.
+A cursor or ambient effect should be added as one isolated client layer (e.g. a decorative overlay driven by
+CSS custom properties) so existing components do not need rewriting.
+
 ## Performance budget
 
 - Motion library code is loaded only where needed, using lazy/feature bundles in Phase 5/8.

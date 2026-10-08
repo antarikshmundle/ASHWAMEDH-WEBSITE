@@ -215,7 +215,7 @@ function MobileMenu({
       aria-modal="true"
       aria-label="Site menu"
       data-vertical="brand"
-      className="fixed inset-0 z-50 flex enter-fade flex-col overflow-y-auto bg-base/96 backdrop-blur-md [animation-duration:400ms] xl:hidden"
+      className="fixed inset-0 z-50 flex enter-fade flex-col overflow-y-auto bg-base [animation-duration:400ms] xl:hidden"
     >
       <div className="container-site flex h-16 shrink-0 items-center justify-between">
         <AshwamedhLogo width={120} alt="" />
@@ -232,10 +232,14 @@ function MobileMenu({
 
       <nav aria-label="Primary" className="container-site flex-1 pt-6">
         <ul className="flex flex-col">
-          {primaryNav.map((item) => {
+          {primaryNav.map((item, i) => {
             const active = isCurrent(item);
             return (
-              <li key={item.href} className="border-b border-line-subtle">
+              <li
+                key={item.href}
+                className="enter-item border-b border-line-subtle"
+                style={{ animationDelay: `${Math.min(i, 5) * 60}ms` }}
+              >
                 <Link
                   href={item.href}
                   onClick={onClose}

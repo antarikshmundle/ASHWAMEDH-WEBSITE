@@ -227,12 +227,16 @@
     0 0 32px color-mix(in oklab, var(--accent) 28%, transparent);
 }
 
-/* ---------- Motion: hero entrance (single cinematic sequence, plays once) ---------- */
+/*
+ * ---------- Motion: entrances (docs/design-system/motion.md) ----------
+ * Hero: one cinematic sequence per page load. Mobile menu items: short staggered entrance.
+ * Under reduced motion the entrance does not run at all — content is shown in its final state.
+ */
 
 @keyframes rise-in {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(var(--enter-distance, 20px));
   }
   to {
     opacity: 1;
@@ -250,7 +254,21 @@
 
 @utility enter-rise {
   animation: rise-in 700ms var(--ease-out) both;
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
 }
 @utility enter-fade {
   animation: fade-in 700ms var(--ease-out) both;
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+/* Menu item: 8 px rise over 240 ms; the caller sets animation-delay (60 ms stagger, max 6 steps). */
+@utility enter-item {
+  --enter-distance: 8px;
+  animation: rise-in 240ms var(--ease-out) both;
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
 }

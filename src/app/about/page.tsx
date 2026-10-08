@@ -30,13 +30,13 @@ export default function AboutPage() {
             <li key={v.id} data-vertical={v.id}>
               <Link
                 href={v.href}
-                className="group flex min-h-16 items-center gap-4 rounded-lg border border-line bg-surface px-5 transition-colors hover:border-accent/55"
+                className="group flex min-h-16 items-center gap-4 rounded-lg border border-line bg-surface px-5 transition-colors hover:border-accent/55 focus-visible:border-accent/55"
               >
                 <IconTile icon={verticalIcons[v.icon]} />
                 <span className="flex-1 type-title text-fg">{v.name}</span>
                 <ArrowRight
                   aria-hidden
-                  className="size-4 text-accent transition-transform group-hover:translate-x-1"
+                  className="size-4 text-accent transition-transform motion-safe:group-hover:translate-x-1"
                 />
               </Link>
             </li>

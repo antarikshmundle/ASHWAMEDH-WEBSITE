@@ -30,6 +30,9 @@ Target: **WCAG 2.2 AA** across the site. Contrast numbers are in [colors.md](col
 - With `prefers-reduced-motion: reduce`:
   - No parallax, translate, scale, auto-scrolling or background motion.
   - Reveals become an instant appearance or a fade of ≤ 150 ms.
+  - Hover lift, arrow nudges, card art zoom and button press scale are off (`motion-safe:` only); glow,
+    border and colour feedback stay.
+  - Hero and menu entrances do not run; content renders in its final state.
   - The logo transition becomes an instant swap.
 - No content depends on motion to be understood or reached.
 - Details: [motion.md](motion.md).

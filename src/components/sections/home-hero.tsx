@@ -81,7 +81,7 @@ export function HomeHero() {
           href="#explore"
           className="group flex min-h-11 flex-col items-center gap-2 rounded-md px-3 py-1 type-micro text-fg-secondary hover:text-fg"
         >
-          <span className="flex size-10 items-center justify-center rounded-full border border-line-control transition-transform duration-150 group-hover:translate-y-0.5">
+          <span className="flex size-10 items-center justify-center rounded-full border border-line-control transition-transform duration-150 motion-safe:group-hover:translate-y-0.5">
             <ArrowDown aria-hidden className="size-4" />
           </span>
           Scroll to explore

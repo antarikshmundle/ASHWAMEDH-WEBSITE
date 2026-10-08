@@ -13,7 +13,7 @@ export function EventCard({ event, index = 0 }: { event: EventRecord; index?: nu
     <Link
       href={`/events/${event.slug}`}
       id={`event-${event.slug}`}
-      className="group flex h-full scroll-mt-28 flex-col overflow-hidden rounded-lg border border-line bg-surface transition-[transform,border-color,box-shadow] duration-150 ease-[var(--ease-standard)] hover:-translate-y-0.5 hover:border-accent/55 hover:shadow-card"
+      className="group flex h-full scroll-mt-28 flex-col overflow-hidden rounded-lg border border-line bg-surface transition-[transform,border-color,box-shadow] duration-150 ease-[var(--ease-standard)] hover:border-accent/55 hover:shadow-card focus-visible:border-accent/55 focus-visible:shadow-card motion-safe:hover:-translate-y-0.5"
     >
       <div className="relative aspect-video overflow-hidden">
         {/* Official image, or the abstract placeholder until one exists (D5) */}
@@ -35,11 +35,11 @@ export function EventCard({ event, index = 0 }: { event: EventRecord; index?: nu
           <span className="sr-only">Date: </span>
           {fact(event.date)}
         </p>
-        <span className="mt-3 inline-flex h-9 w-fit items-center gap-2 rounded-md border border-accent/55 px-3 type-meta text-accent transition-colors group-hover:border-accent">
+        <span className="mt-3 inline-flex h-9 w-fit items-center gap-2 rounded-md border border-accent/55 px-3 type-meta text-accent transition-colors group-hover:border-accent group-focus-visible:border-accent">
           View Details
           <ArrowRight
             aria-hidden
-            className="size-3.5 transition-transform group-hover:translate-x-0.5"
+            className="size-3.5 transition-transform motion-safe:group-hover:translate-x-0.5"
           />
         </span>
       </div>

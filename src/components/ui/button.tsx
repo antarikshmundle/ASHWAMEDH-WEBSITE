@@ -11,7 +11,7 @@ import type { ReactNode } from "react";
 const base =
   "inline-flex min-h-11 items-center justify-center gap-2.5 rounded-md px-6 type-button transition-[background-color,border-color,box-shadow,transform] duration-150 ease-[var(--ease-standard)]";
 
-const primary = `${base} h-12 bg-accent-strong text-on-accent hover:bg-accent hover:glow-sm active:scale-[0.98]`;
+const primary = `${base} h-12 bg-accent-strong text-on-accent hover:bg-accent hover:glow-sm focus-visible:glow-sm motion-safe:active:scale-[0.98]`;
 
 export function PrimaryLink({
   href,
@@ -68,7 +68,7 @@ export function SecondaryLink({
   icon?: ReactNode;
   external?: boolean;
 }) {
-  const cls = `${base} h-12 border border-line-control text-fg hover:border-accent/55 active:bg-white/8`;
+  const cls = `${base} h-12 border border-line-control text-fg hover:border-accent/55 focus-visible:border-accent/55 active:bg-white/8`;
   return (
     <a
       href={href}
@@ -92,7 +92,7 @@ export function ArrowLink({ href, children }: { href: string; children: ReactNod
       {children}
       <ArrowRight
         aria-hidden
-        className="size-4 transition-transform duration-150 group-hover:translate-x-1"
+        className="size-4 transition-transform duration-150 motion-safe:group-hover:translate-x-1"
       />
     </Link>
   );
