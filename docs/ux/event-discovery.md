@@ -108,9 +108,9 @@ Field names follow the Phase 6 data model (`EventRecord`, see [../content/event-
 | `eligibility`          | **Eligibility** tab — one paragraph per item                                                                         | "Eligibility details coming soon."                     |
 | `coordinators`         | **Coordinator** tab                                                                                                  | "Coordinator details will be announced."               |
 | `registrationDeadline` | Small line under the CTA row, **only while registration is open**                                                    | Hidden (CTA already says "Registration Opening Soon")  |
-| `registrationLink`     | "Register Now" (primary CTA)                                                                                         | CTA disabled: "Registration Opening Soon"              |
-| `pdf`                  | "Download Event PDF" (secondary CTA)                                                                                 | CTA disabled: "Event PDF Coming Soon"                  |
-| `status`               | Drives CTA state and any "Registration Closed" / "Completed" label                                                   | Treated as not yet open                                |
+| `registrationLink`     | "Register Now" (primary CTA) — official Google Form, active only with `status` `"open"` (D7-1, D7-3)                 | CTA disabled: "Registration Opening Soon"              |
+| `pdf`                  | "Download Event PDF" (secondary CTA) — `https://` URL or `/docs/…` file (D7-8)                                       | CTA disabled: "Event PDF Coming Soon"                  |
+| `status`               | `not-open` / `open` / `closed` — drives the CTA state; no "Completed" state (D7-4)                                   | Treated as not yet open                                |
 
 Rules:
 
@@ -139,6 +139,9 @@ Event detail
 - "Register Now" exists **only** on event detail pages — never on cards, listings or the homepage
   (keeps one clear path: read details → register).
 - The site never stores registration data.
-- Exact `status` values are defined in Phase 6; Phase 2 only fixes the three user-visible CTA states.
-- Dependency [E]: official Google Form URL per event (Phase 7). Adding the URL to data flips the CTA
-  automatically — no UI change.
+- `status` values: `not-open` (default) · `open` · `closed` — one per CTA state above. There is no
+  "Completed" state (D7-4).
+- "Register Now" shows only when `status` is `"open"` **and** the official Google Form link is valid
+  (D7-1, D7-3). Adding a link alone does not open registration; the deadline (free text) shows only
+  while open, and nothing closes automatically (D7-5). Invalid registration data fails the build (D7-2).
+- Dependency [E]: official Google Form URL per event. Authoring rules: `docs/content/event-data.md` §3.

@@ -5,6 +5,7 @@ import type {
   EventIdentity,
   EventRecord,
 } from "@/types/festival";
+import { pdfHref, registrationHref } from "@/lib/safe-url";
 
 const SOURCE_KINDS: readonly ContentSource["kind"][] = [
   "official-pdf",
@@ -49,13 +50,46 @@ function assertSource(slug: string, source: ContentSource | undefined): void {
 }
 
 /**
+ * A link that must be safe when given (D7-1, D7-8, D7-9): blank → `null`; a non-blank value
+ * the policy rejects fails the build instead of shipping a broken or unsafe link (D7-2).
+ */
+function safeLink(
+  slug: string,
+  field: string,
+  value: string | undefined,
+  toHref: (value: string) => string | null,
+  rule: string,
+): string | null {
+  const given = text(value);
+  if (!given) return null;
+  const href = toHref(given);
+  if (!href) throw new Error(`Event "${slug}": ${field} "${given}" is not allowed — ${rule}.`);
+  return href;
+}
+
+/**
  * Resolves one event: frozen identity + its official details (if any).
- * Pure — it never adds content. Omitted or blank values become `null`; registration
- * fields (Phase 7) pass through unchanged, and registration stays "not-open" by default.
+ * Pure — it never adds content. Omitted or blank values become `null`, and registration stays
+ * "not-open" by default. Registration and PDF links are validated (Phase 7): an unsafe link, or
+ * `status: "open"` without a valid registration link, fails the build (D7-2, D7-3).
  */
 export function buildEvent(identity: EventIdentity, details?: EventDetailsInput): EventRecord {
   if (details) assertSource(identity.slug, details.source);
   const d: Partial<EventDetailsInput> = details ?? {};
+  const { slug } = identity;
+
+  const registrationLink = safeLink(
+    slug,
+    "registrationLink",
+    d.registrationLink,
+    registrationHref,
+    "use an official Google Form (https://docs.google.com/forms/… or https://forms.gle/…)",
+  );
+  const pdf = safeLink(slug, "pdf", d.pdf, pdfHref, "use an https:// URL or a /docs/… path");
+  const status = d.status ?? "not-open";
+  if (status === "open" && !registrationLink) {
+    throw new Error(`Event "${slug}": status "open" needs a valid registrationLink.`);
+  }
 
   return {
     slug: identity.slug,
@@ -75,9 +109,9 @@ export function buildEvent(identity: EventIdentity, details?: EventDetailsInput)
     time: text(d.time),
     venue: text(d.venue),
     coordinators: coordinatorList(d.coordinators),
-    pdf: text(d.pdf),
-    registrationLink: d.registrationLink ?? null,
-    registrationDeadline: d.registrationDeadline ?? null,
-    status: d.status ?? "not-open",
+    pdf,
+    registrationLink,
+    registrationDeadline: text(d.registrationDeadline),
+    status,
   };
 }

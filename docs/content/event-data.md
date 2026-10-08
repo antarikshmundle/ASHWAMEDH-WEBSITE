@@ -65,8 +65,8 @@ export const eventDetails: Partial<Record<EventSlug, EventDetailsInput>> = {
 | `venue`                                              | "Venue" chip + Venue tab    | Official venue name                                                          |
 | `coordinators`                                       | Coordinator tab             | `{ name, phone, email }` — `phone` / `email` may be `null`                   |
 | `image`                                              | Card + detail header        | A file in `public/images/events/`, written as `/images/events/<file>`        |
-| `pdf`                                                | "Download Event PDF" button | Path or URL of the official PDF                                              |
-| `registrationLink`, `registrationDeadline`, `status` | Registration CTA            | Phase 7 — leave out until the registration phase                             |
+| `pdf`                                                | "Download Event PDF" button | Official PDF — see §3 for the allowed forms                                  |
+| `registrationLink`, `registrationDeadline`, `status` | Registration CTA            | See §3 — only when an official form exists                                   |
 
 Notes:
 
@@ -76,7 +76,44 @@ Notes:
   independent — enter only what the source gives.
 - Values are trimmed; blank strings and empty lists count as "not given".
 
-## 3. When information is unknown
+## 3. Registration and event PDF
+
+Decisions D7-1 … D7-9 (`docs/requirements/decisions-log.md`). The checks live in `buildEvent()`
+(`src/data/events/build.ts`) and `src/lib/safe-url.ts`.
+
+```ts
+hackathon: {
+  source: { kind: "official-form", reference: "IT Hackathon 2026 registration", date: "2026-11-02" },
+  registrationLink: "https://forms.gle/<official-id>",
+  registrationDeadline: "<official wording>",
+  status: "open",
+  pdf: "/docs/IT_Hackathon_2026.pdf",
+},
+```
+
+- **Optional, unknown = left out.** No form yet → no `registrationLink`; the CTA shows "Registration
+  Opening Soon". Never enter a guessed, sample or test URL.
+- **Allowed links (D7-1):** `https://docs.google.com/forms/…` or `https://forms.gle/…` only — the link
+  the organisers published, exactly. No `http://`, other hosts (including other link shorteners) or site paths.
+- **`status`** is `"not-open"` (default), `"open"` or `"closed"`. There is no "Completed" state (D7-4).
+- **Register Now appears only when `status: "open"` _and_ the link is valid (D7-3).** A valid link on its
+  own does not open registration — the link can be entered early and the event stays "Opening Soon"
+  until `status` is set to `"open"`. To close, set `status: "closed"` ("Registration Closed").
+- **`registrationDeadline`** is free text in the official wording, shown under the CTA only while
+  registration is open (D7-5). Nothing is parsed and nothing closes automatically — change `status`
+  by hand.
+- **`pdf` (D7-8):** an `https://` URL, or a file placed in `public/docs/` written as
+  `/docs/<file>.pdf`. Use a URL-safe file name (letters, digits, `-`, `_`, `.` — no spaces). Missing →
+  "Event PDF Coming Soon".
+- **Source (D7-6):** the entry's `source` covers the registration and PDF values too — e.g.
+  `official-form` for a form the organisers shared, `owner-confirmed` if the owner sent the link.
+- **Build guard (D7-2):** a disallowed `registrationLink` or `pdf`, or `status: "open"` without a valid
+  link, fails `npm run build` (and the tests) with a message naming the event and field. Fix the data;
+  do not work around the check.
+- Values are trimmed; a blank value counts as not given (D7-9).
+- Cultural Night has no registration (OD-14, D7-7).
+
+## 4. When information is unknown
 
 Leave the field out. Do not write `"TBA"`, `"Coming soon"`, `"-"` or a guess. The display layer
 (`src/lib/display.ts`) turns missing values into the agreed wording:
@@ -85,11 +122,11 @@ Leave the field out. Do not write `"TBA"`, `"Coming soon"`, `"-"` or a guess. Th
 | ---------------------------------------------------------- | ---------------------------------------------- |
 | A chip value                                               | TBA                                            |
 | About / Rules / Eligibility / Prizes / Venue / Coordinator | "…coming soon" / "…will be announced" sentence |
-| Registration link                                          | "Registration Opening Soon" (disabled)         |
+| Registration not open (no `status: "open"` + valid link)   | "Registration Opening Soon" (disabled)         |
 | PDF                                                        | "Event PDF Coming Soon" (disabled)             |
 | Image                                                      | Abstract vertical artwork                      |
 
-## 4. Renamed events — `legacySlugs`
+## 5. Renamed events — `legacySlugs`
 
 If an event's **official name** changes:
 
@@ -107,7 +144,8 @@ here; there are none today.
 > Hosting note: on `next start` the redirect is a real HTTP 308. The static HTML also carries Next's
 > client-side redirect for static hosting. Re-check redirects on the final host once it is chosen.
 
-## 5. Before you commit content
+## 6. Before you commit content
 
 Run `npm run lint`, `npm run typecheck`, `npm test` and `npm run build`. The tests check that every
-details entry has a valid source, every key is a real slug, and the 39 identities are unchanged.
+details entry has a valid source, every key is a real slug, registration and PDF links pass the
+D7 rules, and the 39 identities are unchanged.

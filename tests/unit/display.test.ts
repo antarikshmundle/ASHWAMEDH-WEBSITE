@@ -38,9 +38,47 @@ describe("display helpers", () => {
     expect(registrationState({ status: "closed", registrationLink: null }).kind).toBe("closed");
   });
 
-  it("shows PDF Coming Soon until a file exists", () => {
+  it("uses only a validated Google Form link for Register Now (D7-1, D7-3)", () => {
+    expect(
+      registrationState({ status: "open", registrationLink: "  https://forms.gle/AbC123xyz " }),
+    ).toEqual({ kind: "open", label: "Register Now", href: "https://forms.gle/AbC123xyz" });
+    // Defensive fallback (D7-2): unsafe or non-form links never become a CTA.
+    for (const bad of [
+      "javascript:alert(1)",
+      "data:text/html,x",
+      "http://forms.gle/AbC123xyz",
+      "https://evil.example/phish",
+      "/events/hackathon",
+    ])
+      expect(registrationState({ status: "open", registrationLink: bad }).kind, bad).toBe(
+        "opening-soon",
+      );
+    // A link alone does not open registration (D7-3); closed always wins.
+    expect(
+      registrationState({ status: "not-open", registrationLink: "https://forms.gle/AbC" }).kind,
+    ).toBe("opening-soon");
+    expect(
+      registrationState({ status: "closed", registrationLink: "https://forms.gle/AbC" }),
+    ).toEqual({
+      kind: "closed",
+      label: "Registration Closed",
+    });
+  });
+
+  it("shows the PDF CTA only for a safe link (D7-8)", () => {
     expect(pdfState(null).kind).toBe("coming-soon");
-    expect(pdfState("/pdfs/x.pdf").kind).toBe("available");
+    expect(pdfState("/docs/IT_Hackathon_2026.pdf")).toEqual({
+      kind: "available",
+      href: "/docs/IT_Hackathon_2026.pdf",
+    });
+    expect(pdfState("https://drive.google.com/file/d/abc/view").kind).toBe("available");
+    for (const bad of [
+      "/pdfs/x.pdf",
+      "http://example.org/a.pdf",
+      "javascript:alert(1)",
+      "/docs/../x.pdf",
+    ])
+      expect(pdfState(bad), bad).toEqual({ kind: "coming-soon", label: "Event PDF Coming Soon" });
   });
 });
 

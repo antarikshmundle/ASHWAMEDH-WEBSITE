@@ -76,7 +76,7 @@ export function EventListing({ vertical }: { vertical: EventVertical }) {
             </header>
 
             <div className="mt-8 lg:hidden">
-              <JumpToEvent events={list} />
+              <JumpToEvent events={list.map(({ slug, name }) => ({ slug, name }))} />
             </div>
 
             <h2 className="sr-only">All {info.shortName} events</h2>

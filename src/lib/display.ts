@@ -1,3 +1,4 @@
+import { pdfHref, registrationHref } from "@/lib/safe-url";
 import type { EventRecord, Participation } from "@/types/festival";
 
 /**
@@ -57,21 +58,28 @@ export type RegistrationState =
   | { kind: "open"; label: string; href: string }
   | { kind: "closed"; label: string };
 
-/** Primary CTA state (docs/ux/event-discovery.md §8). Opens only with an official link. */
+/**
+ * Primary CTA state (docs/ux/event-discovery.md §8). Open only when the status is "open" and
+ * the link is a valid official Google Form (D7-3); anything else shows "Registration Opening Soon"
+ * (defensive fallback, D7-2 — buildEvent already rejects such data).
+ */
 export function registrationState(
   event: Pick<EventRecord, "registrationLink" | "status">,
 ): RegistrationState {
   if (event.status === "closed") return { kind: "closed", label: "Registration Closed" };
-  if (event.status === "open" && event.registrationLink) {
-    return { kind: "open", label: "Register Now", href: event.registrationLink };
+  const href = registrationHref(event.registrationLink);
+  if (event.status === "open" && href) {
+    return { kind: "open", label: "Register Now", href };
   }
   return { kind: "opening-soon", label: REGISTRATION_OPENING_SOON };
 }
 
 export type PdfState = { kind: "available"; href: string } | { kind: "coming-soon"; label: string };
 
+/** Secondary CTA state: available only for a safe PDF link (D7-8); otherwise "Coming Soon". */
 export function pdfState(pdf: string | null): PdfState {
-  return pdf
-    ? { kind: "available", href: pdf }
+  const href = pdfHref(pdf);
+  return href
+    ? { kind: "available", href }
     : { kind: "coming-soon", label: "Event PDF Coming Soon" };
 }

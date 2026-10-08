@@ -88,13 +88,13 @@ export interface EventDetailsInput {
   time?: string;
   venue?: string;
   coordinators?: readonly Coordinator[];
-  /** Official event PDF path or URL. */
+  /** Official event PDF: an https:// URL or a /docs/… path (D7-8; anything else fails the build). */
   pdf?: string;
-  /** Phase 7 — passed through unchanged. */
+  /** Official Google Form — https://docs.google.com/forms/… or https://forms.gle/… (D7-1). */
   registrationLink?: string;
-  /** Phase 7 — passed through unchanged. */
+  /** Official wording, shown only while registration is open (D7-5). */
   registrationDeadline?: string;
-  /** Phase 7 — passed through unchanged. */
+  /** Defaults to "not-open"; "open" requires a valid registrationLink (D7-3). */
   status?: RegistrationStatus;
 }
 

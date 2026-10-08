@@ -3,6 +3,31 @@
 Clarifications and corrections from the project owner. These take precedence over
 [master-prompt-v1.md](./master-prompt-v1.md) where they conflict. Newest first.
 
+## 2026-10-08 — Phase 7 (Registration Integration) — owner decisions
+
+Approved after the Phase 7.1 registration architecture audit:
+
+| #    | Decision                                                                                                                                 |
+| ---- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| D7-1 | Registration links: HTTPS only, and only official Google Forms — `https://docs.google.com/forms/…` or `https://forms.gle/…`.             |
+| D7-2 | Invalid or inconsistent registration data fails the build; the display layer also falls back defensively to "Registration Opening Soon". |
+| D7-3 | Registration is open only when `status` is `"open"` **and** a valid registration link exists.                                            |
+| D7-4 | No "Completed" state in Phase 7; conflicting documentation is corrected.                                                                 |
+| D7-5 | Registration deadline is free text, shown only while registration is open; no automatic closing.                                         |
+| D7-6 | Provenance stays the existing entry-level `ContentSource`; no separate registration source field.                                        |
+| D7-7 | Cultural Night registration stays out of Phase 7 (OD-14).                                                                                |
+| D7-8 | Event PDF links use the same safe-URL pattern: HTTPS URLs, or site paths under `/docs/` (files in `public/docs/`).                       |
+| D7-9 | Registration and PDF values are trimmed; blank values become `null`.                                                                     |
+
+Implementation notes:
+
+| #   | Note                                                                                                                                                                                                         |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| R1  | `buildEvent()` validates registration and PDF data (`src/lib/safe-url.ts`): a disallowed `registrationLink` or `pdf`, or `status: "open"` without a valid link, fails the build. Supersedes Phase 6 note E4. |
+| R2  | `registrationState()` / `pdfState()` re-check links before rendering; anything unsafe falls back to "Registration Opening Soon" / "Event PDF Coming Soon".                                                   |
+| R3  | Listing pages pass only `{ slug, name }` to the client "Jump to event" menu, so registration and PDF data are never serialised into listing pages.                                                           |
+| R4  | No registration URLs are in the data yet; `details.ts` stays empty until official forms arrive. Authoring rules: `docs/content/event-data.md` §3.                                                            |
+
 ## 2026-10-07 — Phase 6 (Event/Data Architecture)
 
 Owner-approved decisions (P6-1 … P6-7, as recommended in the Phase 6 plan):

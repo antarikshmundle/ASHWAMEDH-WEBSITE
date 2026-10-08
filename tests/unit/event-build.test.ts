@@ -106,17 +106,79 @@ describe("buildEvent", () => {
     ]);
   });
 
-  it("passes Phase 7 registration fields through unchanged", () => {
-    const details: EventDetailsInput = {
-      source,
-      registrationLink: "https://forms.gle/example",
-      registrationDeadline: "Nov 20",
-      status: "open",
-    };
-    const record = buildEvent(identity, details);
-    expect(record.registrationLink).toBe("https://forms.gle/example");
-    expect(record.registrationDeadline).toBe("Nov 20");
-    expect(record.status).toBe("open");
+  describe("registration and PDF (Phase 7.3)", () => {
+    const FORM = "https://forms.gle/AbC123xyz";
+    const build = (details: Omit<EventDetailsInput, "source">) =>
+      buildEvent(identity, { source, ...details });
+
+    it("keeps an open registration with a valid Google Form link", () => {
+      const record = build({
+        registrationLink: FORM,
+        registrationDeadline: "Nov 20",
+        status: "open",
+      });
+      expect(record.registrationLink).toBe(FORM);
+      expect(record.registrationDeadline).toBe("Nov 20");
+      expect(record.status).toBe("open");
+    });
+
+    it("normalizes registration values: trims, and blank becomes null (D7-9)", () => {
+      const record = build({ registrationLink: `  ${FORM} `, registrationDeadline: "  Nov 20 " });
+      expect(record.registrationLink).toBe(FORM);
+      expect(record.registrationDeadline).toBe("Nov 20");
+      const blank = build({ registrationLink: "   ", registrationDeadline: " ", pdf: "  " });
+      expect(blank.registrationLink).toBeNull();
+      expect(blank.registrationDeadline).toBeNull();
+      expect(blank.pdf).toBeNull();
+    });
+
+    it("defaults to not-open, even when a valid link is already known (D7-3)", () => {
+      expect(build({}).status).toBe("not-open");
+      const linkOnly = build({ registrationLink: FORM });
+      expect(linkOnly.status).toBe("not-open");
+      expect(linkOnly.registrationLink).toBe(FORM);
+    });
+
+    it("keeps a closed registration with or without a link", () => {
+      expect(build({ status: "closed", registrationLink: FORM }).status).toBe("closed");
+      expect(build({ status: "closed" }).status).toBe("closed");
+    });
+
+    it("fails the build when status is open without a valid link (D7-2, D7-3)", () => {
+      expect(() => build({ status: "open" })).toThrow(
+        /status "open" needs a valid registrationLink/,
+      );
+      expect(() => build({ status: "open", registrationLink: "  " })).toThrow(/status "open"/);
+    });
+
+    it("fails the build for an unsafe or non-Google-Form registration link (D7-1, D7-2)", () => {
+      for (const bad of [
+        "http://forms.gle/AbC123xyz",
+        "javascript:alert(1)",
+        "https://evil.example/phish",
+        "https://docs.google.com/document/d/abc",
+        "/events/hackathon",
+      ])
+        expect(() => build({ registrationLink: bad }), bad).toThrow(
+          /registrationLink .* not allowed/,
+        );
+    });
+
+    it("accepts https and /docs/ PDF links and rejects anything else (D7-8)", () => {
+      expect(build({ pdf: "https://drive.google.com/file/d/abc/view" }).pdf).toBe(
+        "https://drive.google.com/file/d/abc/view",
+      );
+      expect(build({ pdf: " /docs/IT_Hackathon_2026.pdf " }).pdf).toBe(
+        "/docs/IT_Hackathon_2026.pdf",
+      );
+      for (const bad of [
+        "http://example.org/a.pdf",
+        "data:application/pdf;base64,AA",
+        "/docs/../x.pdf",
+        "rules.pdf",
+      ])
+        expect(() => build({ pdf: bad }), bad).toThrow(/pdf .* not allowed/);
+    });
   });
 
   it("rejects unknown slugs and missing sources at compile time", () => {

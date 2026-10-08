@@ -113,3 +113,78 @@ describe("event detail and card rendering (Phase 6.3)", () => {
     // 78 full renders (each with SVG art): allow more than the 5 s default on a busy machine.
   }, 20_000);
 });
+
+describe("registration and PDF CTAs (Phase 7.3)", () => {
+  const FORM = "https://forms.gle/AbC123xyz";
+  const formLinks = (markup: string) =>
+    markup.match(new RegExp(`<a href="${FORM}"[^>]*>`, "g")) ?? [];
+
+  it("renders Register Now to the validated form, in a new tab, desktop and sticky bar", () => {
+    const detail = html(
+      <EventDetail
+        event={withDetails({
+          status: "open",
+          registrationLink: FORM,
+          registrationDeadline: "Nov 20",
+        })}
+      />,
+    );
+    const links = formLinks(detail);
+    expect(links).toHaveLength(2); // desktop CTA row + mobile sticky bar
+    for (const a of links) {
+      expect(a).toContain('target="_blank"');
+      expect(a).toContain('rel="noopener noreferrer"');
+    }
+    expect(detail.match(/Register Now/g)).toHaveLength(2);
+    expect(detail.match(/\(opens in new tab\)/g)?.length).toBeGreaterThanOrEqual(2);
+    expect(detail).toContain("Registration deadline: Nov 20");
+    expect(detail).not.toContain("Registration Opening Soon");
+  });
+
+  it("shows Registration Closed (no link, no deadline) when closed", () => {
+    const detail = html(
+      <EventDetail
+        event={withDetails({
+          status: "closed",
+          registrationLink: FORM,
+          registrationDeadline: "Nov 20",
+        })}
+      />,
+    );
+    expect(detail.match(/Registration Closed/g)).toHaveLength(2);
+    expect(formLinks(detail)).toHaveLength(0);
+    expect(detail).not.toContain("Registration deadline");
+    expect(detail).not.toContain("Register Now");
+  });
+
+  it("keeps Registration Opening Soon while not open, even with a known link and deadline", () => {
+    const detail = html(
+      <EventDetail
+        event={withDetails({ registrationLink: FORM, registrationDeadline: "Nov 20" })}
+      />,
+    );
+    expect(detail.match(/Registration Opening Soon/g)).toHaveLength(2);
+    expect(formLinks(detail)).toHaveLength(0);
+    expect(detail).not.toContain("Registration deadline");
+  });
+
+  it("renders Download Event PDF only for a validated PDF link", () => {
+    const withPdf = html(
+      <EventDetail event={withDetails({ pdf: "/docs/IT_Hackathon_2026.pdf" })} />,
+    );
+    expect(withPdf).toMatch(/<a href="\/docs\/IT_Hackathon_2026.pdf"[^>]*target="_blank"/);
+    expect(withPdf).toContain("Download Event PDF");
+    expect(withPdf).not.toContain("Event PDF Coming Soon");
+
+    const withoutPdf = html(<EventDetail event={withDetails({})} />);
+    expect(withoutPdf).toContain("Event PDF Coming Soon");
+    expect(withoutPdf).not.toContain("Download Event PDF");
+  });
+
+  it("never puts Register Now on event cards", () => {
+    const open = withDetails({ status: "open", registrationLink: FORM });
+    const card = html(<EventCard event={open} />);
+    expect(card).not.toContain("Register Now");
+    expect(card).not.toContain(FORM);
+  });
+});
