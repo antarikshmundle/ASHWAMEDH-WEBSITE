@@ -6,7 +6,7 @@ import type { EventIdentity } from "@/types/festival";
  *
  * Slugs are explicit and permanent: each equals the slug rule applied to the official name
  * (docs/ux/sitemap-and-routes.md §3), frozen so a name change can never silently change a URL.
- * Only identity lives here. Official details (rules, fees, prizes…) are added separately once
+ * Only identity lives here. Official details (rules, fees, coordinators…) are added separately once
  * official PDFs/forms exist — never invented here.
  */
 export const eventInventory = [
@@ -169,6 +169,7 @@ export const eventInventory = [
   { slug: "long-jump", name: "Long Jump", category: "sports", department: null },
   { slug: "100m-running", name: "100m Running", category: "sports", department: null },
   { slug: "carrom", name: "Carrom", category: "sports", department: null },
+  { slug: "tug-of-war", name: "Tug of War", category: "sports", department: null },
 ] as const satisfies readonly EventIdentity[];
 
 /** Every valid event slug, as a literal union. */

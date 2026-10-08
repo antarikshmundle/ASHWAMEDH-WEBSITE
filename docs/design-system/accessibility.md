@@ -51,11 +51,11 @@ Target: **WCAG 2.2 AA** across the site. Contrast numbers are in [colors.md](col
 
 ## Disabled and status states
 
-| Case                                                                        | Rule                                                                                                                                          |
-| --------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| "Coming Soon" status (OD-12)                                                | Non-interactive element with visible text; not in the tab order; screen readers read "Coming Soon". It does not use `role="button"`.          |
-| "Registration Opening Soon", "Event PDF Coming Soon", "Registration Closed" | Visible text in `text.muted` (≥ 6.2 : 1). If rendered as a `<button>`, use `aria-disabled="true"` (not `disabled`), so it stays discoverable. |
-| Disabled appearance                                                         | Dashed `border.control` + muted text. **Never only reduced opacity.**                                                                         |
+| Case                                                                             | Rule                                                                                                                                          |
+| -------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| "Coming Soon" status (OD-12)                                                     | Non-interactive element with visible text; not in the tab order; screen readers read "Coming Soon". It does not use `role="button"`.          |
+| "Registration Opening Soon", "Guidelines PDF Coming Soon", "Registration Closed" | Visible text in `text.muted` (≥ 6.2 : 1). If rendered as a `<button>`, use `aria-disabled="true"` (not `disabled`), so it stays discoverable. |
+| Disabled appearance                                                              | Dashed `border.control` + muted text. **Never only reduced opacity.**                                                                         |
 
 ## Non-colour cues
 

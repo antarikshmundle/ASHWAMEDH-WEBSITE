@@ -8,12 +8,12 @@ out — the site shows TBA / Coming Soon in its place. Never write placeholder o
 
 ## Where things live
 
-| File                           | What it holds                                                                    | Who edits it                          |
-| ------------------------------ | -------------------------------------------------------------------------------- | ------------------------------------- |
-| `src/data/events/inventory.ts` | The 39 events: slug, official name, vertical, department, order. **Frozen.**     | Only for an official inventory change |
-| `src/data/events/details.ts`   | Official details per event (rules, fees, prizes…), keyed by slug. Empty for now. | When an official PDF / form arrives   |
-| `src/data/events/build.ts`     | `buildEvent()` — combines identity + details. No content here.                   | Developers only                       |
-| `src/data/events/slugs.ts`     | Slug lookup and redirects for former slugs. No content here.                     | Developers only                       |
+| File                           | What it holds                                                                          | Who edits it                          |
+| ------------------------------ | -------------------------------------------------------------------------------------- | ------------------------------------- |
+| `src/data/events/inventory.ts` | The 40 events: slug, official name, vertical, department, order. **Frozen.**           | Only for an official inventory change |
+| `src/data/events/details.ts`   | Official details per event (rules, fees, coordinators…), keyed by slug. Empty for now. | When an official PDF / form arrives   |
+| `src/data/events/build.ts`     | `buildEvent()` — combines identity + details. No content here.                         | Developers only                       |
+| `src/data/events/slugs.ts`     | Slug lookup and redirects for former slugs. No content here.                           | Developers only                       |
 
 ## 1. Identity (inventory) — frozen
 
@@ -24,7 +24,7 @@ Each event's identity is its **slug**, **official name**, **vertical** and **dep
   generated at runtime, so a name edit can never change a URL by accident.
 - Slug rule (`docs/ux/sitemap-and-routes.md` §3): lowercase kebab-case of the official name, text in
   parentheses dropped, `&` → `and`. Example: "SDGineer (Poster Presentation)" → `sdgineer`.
-- `tests/unit/event-identity.test.ts` holds a frozen snapshot of all 39 identities. Any change to the
+- `tests/unit/event-identity.test.ts` holds a frozen snapshot of all 40 identities. Any change to the
   inventory fails that test on purpose — update both only for an owner-approved official change.
 
 ## 2. Official details — `details.ts`
@@ -38,8 +38,6 @@ export const eventDetails: Partial<Record<EventSlug, EventDetailsInput>> = {
     description: ["First paragraph from the PDF.", "Second paragraph."],
     participation: "team",
     teamSize: "2–4 members",
-    prizePool: "₹10,000",
-    prizeDetails: ["Winner: ₹6,000", "Runner-up: ₹4,000"],
   },
 };
 ```
@@ -51,32 +49,35 @@ export const eventDetails: Partial<Record<EventSlug, EventDetailsInput>> = {
 
 ### Fields
 
-| Field                                                | Shown as                    | Enter                                                                        |
-| ---------------------------------------------------- | --------------------------- | ---------------------------------------------------------------------------- |
-| `description`                                        | About tab                   | A list — one string per paragraph, copied from the official text             |
-| `rules`                                              | Rules tab (numbered list)   | One string per rule                                                          |
-| `eligibility`                                        | Eligibility tab             | A list — one string per paragraph                                            |
-| `participation`                                      | "Participation" chip, card  | `"individual"`, `"team"` or `"individual-or-team"` — only if the source says |
-| `teamSize`                                           | "Team Size" chip            | The official wording, e.g. `"2–4 members"`                                   |
-| `registrationFee`                                    | "Registration Fee" chip     | The official wording, e.g. `"₹100 per team"`                                 |
-| `prizePool`                                          | "Prize Pool" chip           | A **short** value, e.g. `"₹10,000"`                                          |
-| `prizeDetails`                                       | Prizes tab                  | The full breakdown, one line each                                            |
-| `date`, `time`                                       | "Date & Time" chip, card    | Official wording (free text); both optional                                  |
-| `venue`                                              | "Venue" chip + Venue tab    | Official venue name                                                          |
-| `coordinators`                                       | Coordinator tab             | `{ name, phone, email }` — `phone` / `email` may be `null`                   |
-| `image`                                              | Card + detail header        | A file in `public/images/events/`, written as `/images/events/<file>`        |
-| `pdf`                                                | "Download Event PDF" button | Official PDF — see §3 for the allowed forms                                  |
-| `registrationLink`, `registrationDeadline`, `status` | Registration CTA            | See §3 — only when an official form exists                                   |
+| Field                                                | Shown as                   | Enter                                                                        |
+| ---------------------------------------------------- | -------------------------- | ---------------------------------------------------------------------------- |
+| `description`                                        | About tab                  | A list — one string per paragraph, copied from the official text             |
+| `rules`                                              | Rules tab (numbered list)  | One string per rule                                                          |
+| `eligibility`                                        | Eligibility tab            | A list — one string per paragraph                                            |
+| `participation`                                      | "Participation" chip, card | `"individual"`, `"team"` or `"individual-or-team"` — only if the source says |
+| `teamSize`                                           | "Team Size" chip           | The official wording, e.g. `"2–4 members"`                                   |
+| `registrationFee`                                    | "Registration Fee" chip    | The official wording, e.g. `"₹100 per team"`                                 |
+| `date`, `time`                                       | "Date & Time" chip, card   | Official wording (free text); both optional                                  |
+| `venue`                                              | "Venue" chip + Venue tab   | Official venue name                                                          |
+| `coordinators`                                       | Coordinator tab            | `{ name, phone, email }` — `phone` / `email` may be `null`                   |
+| `image`                                              | Card + detail header       | A file in `public/images/events/`, written as `/images/events/<file>`        |
+| `pdf`                                                | "View Guidelines PDF"      | Official PDF — see §3 for the allowed forms                                  |
+| `registrationLink`, `registrationDeadline`, `status` | Registration CTA           | See §3 — only when an official form exists                                   |
 
 Notes:
 
 - **Participation is never guessed from the team size.** "2–4 members" does not imply `"team"` unless
   the source says the event is a team event. If unsure, leave `participation` out (→ TBA).
-- **Prize Pool vs Prizes:** the chip needs one short amount; the tab holds the breakdown. They are
-  independent — enter only what the source gives.
 - Values are trimmed; blank strings and empty lists count as "not given".
+- There is no prize field: no ASHWAMEDH 2026 event has prize information (Phase 7.6).
 
-## 3. Registration and event PDF
+## 3. Registration, guidelines PDF and coordinators
+
+**How registration actually works (Phase 7.6):** students read the event page (details, guidelines
+PDF, coordinator); each department shortlists suitable students (about 2–5 per event), and only
+shortlisted students complete the controlled Google Form. The site therefore shows, by default, the
+guidelines PDF, the coordinator and a fixed "Registration process" note about departmental
+shortlisting. It never implies an open public form.
 
 Decisions D7-1 … D7-9 (`docs/requirements/decisions-log.md`). The checks live in `buildEvent()`
 (`src/data/events/build.ts`) and `src/lib/safe-url.ts`.
@@ -91,12 +92,14 @@ hackathon: {
 },
 ```
 
-- **Optional, unknown = left out.** No form yet → no `registrationLink`; the CTA shows "Registration
-  Opening Soon". Never enter a guessed, sample or test URL.
+- **Optional, unknown = left out.** No form supplied → no `registrationLink`; the CTA shows
+  "Registration Opening Soon" with the departmental-shortlisting note. Never enter a guessed, sample
+  or test URL. A controlled (shortlisted-only) form may be recorded, but keep `status` at `"not-open"`.
 - **Allowed links (D7-1):** `https://docs.google.com/forms/…` or `https://forms.gle/…` only — the link
   the organisers published, exactly. No `http://`, other hosts (including other link shorteners) or site paths.
 - **`status`** is `"not-open"` (default), `"open"` or `"closed"`. There is no "Completed" state (D7-4).
-- **Register Now appears only when `status: "open"` _and_ the link is valid (D7-3).** A valid link on its
+- **Register Now appears only when `status: "open"` _and_ the link is valid (D7-3).** Set `"open"`
+  only when the official source says the event is open for **public** registration. A valid link on its
   own does not open registration — the link can be entered early and the event stays "Opening Soon"
   until `status` is set to `"open"`. To close, set `status: "closed"` ("Registration Closed").
 - **`registrationDeadline`** is free text in the official wording, shown under the CTA only while
@@ -104,7 +107,9 @@ hackathon: {
   by hand.
 - **`pdf` (D7-8):** an `https://` URL, or a file placed in `public/docs/` written as
   `/docs/<file>.pdf`. Use a URL-safe file name (letters, digits, `-`, `_`, `.` — no spaces). Missing →
-  "Event PDF Coming Soon".
+  "Guidelines PDF Coming Soon".
+- **Coordinators:** `coordinators` (name, phone, email) only as officially supplied; `phone` / `email`
+  may be `null`. Missing → "Coordinator details will be announced."
 - **Source (D7-6):** the entry's `source` covers the registration and PDF values too — e.g.
   `official-form` for a form the organisers shared, `owner-confirmed` if the owner sent the link.
 - **Build guard (D7-2):** a disallowed `registrationLink` or `pdf`, or `status: "open"` without a valid
@@ -118,13 +123,13 @@ hackathon: {
 Leave the field out. Do not write `"TBA"`, `"Coming soon"`, `"-"` or a guess. The display layer
 (`src/lib/display.ts`) turns missing values into the agreed wording:
 
-| Missing                                                    | Shown                                          |
-| ---------------------------------------------------------- | ---------------------------------------------- |
-| A chip value                                               | TBA                                            |
-| About / Rules / Eligibility / Prizes / Venue / Coordinator | "…coming soon" / "…will be announced" sentence |
-| Registration not open (no `status: "open"` + valid link)   | "Registration Opening Soon" (disabled)         |
-| PDF                                                        | "Event PDF Coming Soon" (disabled)             |
-| Image                                                      | Abstract vertical artwork                      |
+| Missing                                                  | Shown                                                                   |
+| -------------------------------------------------------- | ----------------------------------------------------------------------- |
+| A chip value                                             | TBA                                                                     |
+| About / Rules / Eligibility / Venue / Coordinator        | "…coming soon" / "…will be announced" sentence                          |
+| Registration not open (no `status: "open"` + valid link) | "Registration Opening Soon" (disabled) + departmental-shortlisting note |
+| PDF                                                      | "Guidelines PDF Coming Soon" (disabled)                                 |
+| Image                                                    | Abstract vertical artwork                                               |
 
 ## 5. Renamed events — `legacySlugs`
 
@@ -148,4 +153,4 @@ here; there are none today.
 
 Run `npm run lint`, `npm run typecheck`, `npm test` and `npm run build`. The tests check that every
 details entry has a valid source, every key is a real slug, registration and PDF links pass the
-D7 rules, and the 39 identities are unchanged.
+D7 rules, and the 40 identities are unchanged.

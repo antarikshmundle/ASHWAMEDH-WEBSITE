@@ -12,8 +12,6 @@ const OFFICIAL_ONLY: (keyof EventRecord)[] = [
   "teamSize",
   "registrationFee",
   "participation",
-  "prizePool",
-  "prizeDetails",
   "date",
   "time",
   "venue",
@@ -23,12 +21,12 @@ const OFFICIAL_ONLY: (keyof EventRecord)[] = [
   "pdf",
 ];
 
-describe("event inventory (master prompt §6)", () => {
-  it("has exactly 14 Technomedh, 15 Cultural and 10 Sports events", () => {
+describe("event inventory (master prompt §6 + decisions log)", () => {
+  it("has exactly 14 Technomedh, 15 Cultural and 11 Sports events", () => {
     expect(getEventsByVertical("technomedh")).toHaveLength(14);
     expect(getEventsByVertical("cultural")).toHaveLength(15);
-    expect(getEventsByVertical("sports")).toHaveLength(10);
-    expect(events).toHaveLength(39);
+    expect(getEventsByVertical("sports")).toHaveLength(11);
+    expect(events).toHaveLength(40);
   });
 
   it("uses official names (OD-01, OD-02)", () => {

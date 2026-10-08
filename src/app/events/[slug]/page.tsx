@@ -7,7 +7,7 @@ import { getVertical } from "@/data/verticals";
 import { baseOpenGraph } from "@/lib/metadata";
 
 /**
- * All 39 event pages are generated at build time, plus one redirect per former slug
+ * All event pages are generated at build time, plus one redirect per former slug
  * (none today). Unknown slugs 404.
  */
 export const dynamicParams = false;

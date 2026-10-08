@@ -4,7 +4,7 @@ import { renderToString } from "react-dom/server";
 import { EventCard } from "@/components/cards/event-card";
 import { EventDetail } from "@/components/sections/event-detail";
 import { buildEvent, eventInventory, events, getEventBySlug } from "@/data/events";
-import { placeholders } from "@/lib/display";
+import { placeholders, REGISTRATION_PROCESS } from "@/lib/display";
 import type { ContentSource, EventDetailsInput, EventRecord } from "@/types/festival";
 
 vi.mock("next/link", () => ({
@@ -33,18 +33,18 @@ describe("event detail and card rendering (Phase 6.3)", () => {
     for (const slug of ["hackathon", "debate", "cricket"]) {
       const event = getEventBySlug(slug)!;
       const detail = html(<EventDetail event={event} />);
-      for (const label of ["Participation", "Registration Fee", "Prize Pool", "Venue", "Team Size"])
+      for (const label of ["Participation", "Registration Fee", "Venue", "Team Size"])
         expect(chip(detail, label), `${slug} ${label}`).toBe("TBA");
       expect(chip(detail, "Date &amp; Time")).toBe("TBA");
       for (const text of [
         placeholders.description,
         placeholders.rules,
         placeholders.eligibility,
-        placeholders.prizes,
         placeholders.venue,
         placeholders.coordinator,
         "Registration Opening Soon",
-        "Event PDF Coming Soon",
+        "Guidelines PDF Coming Soon",
+        REGISTRATION_PROCESS,
       ])
         expect(detail, `${slug}: ${text}`).toContain(text);
 
@@ -54,20 +54,9 @@ describe("event detail and card rendering (Phase 6.3)", () => {
     }
   });
 
-  it("keeps the Prize Pool chip and the Prizes tab independent", () => {
-    const poolOnly = html(<EventDetail event={withDetails({ prizePool: "₹10,000" })} />);
-    expect(chip(poolOnly, "Prize Pool")).toBe("₹10,000");
-    expect(poolOnly).toContain(placeholders.prizes);
-
-    const detailsOnly = html(
-      <EventDetail
-        event={withDetails({ prizeDetails: ["Winner: ₹6,000", "Runner-up: ₹4,000"] })}
-      />,
-    );
-    expect(chip(detailsOnly, "Prize Pool")).toBe("TBA");
-    expect(detailsOnly).toContain("Winner: ₹6,000");
-    expect(detailsOnly).toContain("Runner-up: ₹4,000");
-    expect(detailsOnly).not.toContain(placeholders.prizes);
+  it("has no prize pool chip or prizes tab (Phase 7.6)", () => {
+    const detail = plain(html(<EventDetail event={getEventBySlug("hackathon")!} />));
+    expect(detail).not.toMatch(/prize/i);
   });
 
   it("renders description and eligibility as one paragraph per item", () => {
@@ -101,8 +90,8 @@ describe("event detail and card rendering (Phase 6.3)", () => {
     expect(chip(detail, "Team Size")).toBe("1");
   });
 
-  it("resolves and renders all 39 events by slug", () => {
-    expect(events).toHaveLength(39);
+  it("resolves and renders all 40 events by slug", () => {
+    expect(events).toHaveLength(40);
     for (const { slug, name } of eventInventory) {
       const event = getEventBySlug(slug);
       expect(event?.name, slug).toBe(name);
@@ -139,6 +128,7 @@ describe("registration and PDF CTAs (Phase 7.3)", () => {
     expect(detail.match(/\(opens in new tab\)/g)?.length).toBeGreaterThanOrEqual(2);
     expect(detail).toContain("Registration deadline: Nov 20");
     expect(detail).not.toContain("Registration Opening Soon");
+    expect(detail).not.toContain(REGISTRATION_PROCESS);
   });
 
   it("shows Registration Closed (no link, no deadline) when closed", () => {
@@ -155,6 +145,7 @@ describe("registration and PDF CTAs (Phase 7.3)", () => {
     expect(formLinks(detail)).toHaveLength(0);
     expect(detail).not.toContain("Registration deadline");
     expect(detail).not.toContain("Register Now");
+    expect(detail).not.toContain(REGISTRATION_PROCESS);
   });
 
   it("keeps Registration Opening Soon while not open, even with a known link and deadline", () => {
@@ -164,21 +155,22 @@ describe("registration and PDF CTAs (Phase 7.3)", () => {
       />,
     );
     expect(detail.match(/Registration Opening Soon/g)).toHaveLength(2);
+    expect(detail).toContain(REGISTRATION_PROCESS); // departmental shortlisting (Phase 7.6)
     expect(formLinks(detail)).toHaveLength(0);
     expect(detail).not.toContain("Registration deadline");
   });
 
-  it("renders Download Event PDF only for a validated PDF link", () => {
+  it("renders View Guidelines PDF only for a validated PDF link", () => {
     const withPdf = html(
       <EventDetail event={withDetails({ pdf: "/docs/IT_Hackathon_2026.pdf" })} />,
     );
     expect(withPdf).toMatch(/<a href="\/docs\/IT_Hackathon_2026.pdf"[^>]*target="_blank"/);
-    expect(withPdf).toContain("Download Event PDF");
-    expect(withPdf).not.toContain("Event PDF Coming Soon");
+    expect(withPdf).toContain("View Guidelines PDF");
+    expect(withPdf).not.toContain("Guidelines PDF Coming Soon");
 
     const withoutPdf = html(<EventDetail event={withDetails({})} />);
-    expect(withoutPdf).toContain("Event PDF Coming Soon");
-    expect(withoutPdf).not.toContain("Download Event PDF");
+    expect(withoutPdf).toContain("Guidelines PDF Coming Soon");
+    expect(withoutPdf).not.toContain("View Guidelines PDF");
   });
 
   it("never puts Register Now on event cards", () => {

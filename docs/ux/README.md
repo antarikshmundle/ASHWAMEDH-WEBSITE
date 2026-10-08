@@ -45,8 +45,8 @@ Every Phase 2 document tags statements with one of these categories.
 - Four vertical cards (Technomedh, Cultural, Sports, Cultural Night) are the main entry into events.
 - Vertical listing = sidebar (desktop) + 3-column card grid; each card has image, name, department
   (OD-16), one meta line, "View Details".
-- Event detail = back link, title, six info chips, primary "Register Now" + secondary "Download Event PDF",
-  six tabs (About, Rules, Eligibility, Prizes, Venue, Coordinator).
+- Event detail = back link, title, five info chips, primary registration CTA + secondary "View Guidelines PDF",
+  departmental-shortlisting note, five tabs (About, Rules, Eligibility, Venue, Coordinator).
 - Unknown values are displayed as "TBA" in place, not hidden — the reference itself does this.
 
 ### B. Official information already confirmed
@@ -63,7 +63,7 @@ Every Phase 2 document tags statements with one of these categories.
 ### C. Information currently TBA
 
 Festival dates, schedule, day count of the overall festival, all event descriptions, rules, eligibility,
-team sizes, fees, prizes, venues, timings, coordinators, registration deadlines, Google Form links,
+team sizes, fees, venues, timings, coordinators, registration deadlines, Google Form links,
 official PDFs, Cultural Night performers and timings, campus map locations, organising committee,
 contact details, social handles, sponsors, gallery imagery, final branding. See
 [../content/README.md](../content/README.md).
@@ -84,7 +84,7 @@ See [owner-decisions.md](owner-decisions.md).
 | Official Cultural Night registration process, if any (OD-14)               | Cultural Night registration CTA                         |
 | Phase 6 event data module (typed, `null` for unknowns)                     | Listing + detail pages                                  |
 | Official Google Form links per event                                       | Phase 7 registration (CTA switches automatically)       |
-| Official PDFs                                                              | "Download Event PDF" activation                         |
+| Official PDFs                                                              | "View Guidelines PDF" activation                        |
 | Official venues + campus layout                                            | Phase 9 campus map                                      |
 | Official date                                                              | Schedule, Cultural Night day labels, SEO event metadata |
 | `NEXT_PUBLIC_SITE_URL` / hosting decision                                  | Canonical URLs, sitemap, Open Graph                     |

@@ -52,6 +52,7 @@ const FROZEN: [slug: string, name: string, category: string, department: string 
   ["long-jump", "Long Jump", "sports", null],
   ["100m-running", "100m Running", "sports", null],
   ["carrom", "Carrom", "sports", null],
+  ["tug-of-war", "Tug of War", "sports", null], // added by owner correction (Phase 7.6)
 ];
 
 describe("frozen event identity (Phase 6.1)", () => {

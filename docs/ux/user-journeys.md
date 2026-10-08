@@ -28,12 +28,12 @@ Students who only know their **department** can scan the department line on ever
 
 ## J3 — Student registering for an event
 
-| Step                           | Page                           | Today                                               | After release        |
-| ------------------------------ | ------------------------------ | --------------------------------------------------- | -------------------- |
-| 1. Reaches event detail (J2)   | `/events/hackathon`            | —                                                   | —                    |
-| 2. Reads rules / downloads PDF | Rules tab, PDF CTA             | "Rules will be published…", "Event PDF Coming Soon" | Rules + PDF          |
-| 3. Taps primary CTA            | Detail                         | **"Registration Opening Soon"** (disabled)          | **"Register Now →"** |
-| 4. Fills the form              | Official Google Form (new tab) | —                                                   | Google confirmation  |
+| Step                           | Page                           | Today                                                    | After release        |
+| ------------------------------ | ------------------------------ | -------------------------------------------------------- | -------------------- |
+| 1. Reaches event detail (J2)   | `/events/hackathon`            | —                                                        | —                    |
+| 2. Reads rules / downloads PDF | Rules tab, PDF CTA             | "Rules will be published…", "Guidelines PDF Coming Soon" | Rules + PDF          |
+| 3. Taps primary CTA            | Detail                         | **"Registration Opening Soon"** (disabled)               | **"Register Now →"** |
+| 4. Fills the form              | Official Google Form (new tab) | —                                                        | Google confirmation  |
 
 Success: no dead ends — the disabled state explains that registration is not open yet.
 

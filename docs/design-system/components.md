@@ -34,10 +34,10 @@ The navbar always uses the **brand** accent, even on vertical pages.
 | Variant             | Idle                                                                                                                  | Hover (pointer)                       | Focus-visible                                                       | Pressed                          | Notes                                                                                                     |
 | ------------------- | --------------------------------------------------------------------------------------------------------------------- | ------------------------------------- | ------------------------------------------------------------------- | -------------------------------- | --------------------------------------------------------------------------------------------------------- |
 | **Primary**         | Fill `accent.strong`, label `text.on-accent`, `radius.md`, height 48                                                  | Fill `accent.base`, `glow.sm`         | Focus ring (`state.focus` 2 px, offset 2)                           | Fill `accent.strong`, scale 0.98 | One per view (Register Now)                                                                               |
-| **Secondary**       | Transparent, 1 px `border.control`, label `text.primary`                                                              | Border `accent.line`, label unchanged | Focus ring                                                          | `state.pressed-overlay`          | Download Event PDF                                                                                        |
+| **Secondary**       | Transparent, 1 px `border.control`, label `text.primary`                                                              | Border `accent.line`, label unchanged | Focus ring                                                          | `state.pressed-overlay`          | View Guidelines PDF                                                                                       |
 | **Tertiary / link** | Label `accent.base`, `text.button`, trailing arrow                                                                    | Underline 1 px, arrow moves 4 px      | Focus ring around the text                                          | —                                | Explore Events →, View Details →, ← Back                                                                  |
 | **Status**          | As defined per placement (navbar / hero)                                                                              | **No change**                         | **Not focusable**                                                   | **No change**                    | "Coming Soon" (OD-12). Rendered as a non-interactive element, `cursor: default`. The arrow is decorative. |
-| **Disabled**        | Fill `bg.surface-2`, 1 px **dashed** `border.control`, label `text.muted`, optional leading clock icon (`text.muted`) | **No change**                         | Not focusable (status text is in the accessible name of the region) | **No change**                    | Registration Opening Soon · Event PDF Coming Soon · Registration Closed                                   |
+| **Disabled**        | Fill `bg.surface-2`, 1 px **dashed** `border.control`, label `text.muted`, optional leading clock icon (`text.muted`) | **No change**                         | Not focusable (status text is in the accessible name of the region) | **No change**                    | Registration Opening Soon · Guidelines PDF Coming Soon · Registration Closed                              |
 
 All buttons: min 44 × 44 touch target, `text.button`, icon 18 px, gap 10.
 
@@ -81,7 +81,7 @@ height 44, icon 18. Active item ("All Events"): `bg.surface-3`, 1 px `accent.lin
 | Title           | `text.h1`, `text.primary`                                                                             |
 | Department line | `text.label`, `text.muted` (OD-07/OD-16)                                                              |
 | Image           | Right column (desktop), fades left into the surface via a horizontal scrim; abstract placeholder (D5) |
-| Chips           | 3 × 2 grid ([Chips](#chips))                                                                          |
+| Chips           | 5 chips, 3-column grid ([Chips](#chips))                                                              |
 | CTA row         | Primary + Secondary, gap 16; wraps on narrow widths                                                   |
 
 ## Chips
@@ -94,7 +94,6 @@ palette in [colors.md](colors.md#chip-palette-ds-07).
 | ---------------- | -------------- | ------------- | -------------------------------------------------- |
 | Participation    | `Users`        | `chip.warm`   | Yes                                                |
 | Registration Fee | `Ticket`       | `chip.warm`   | Yes                                                |
-| Prize Pool       | `Award`        | `chip.warm`   | Yes                                                |
 | Date & Time      | `CalendarDays` | `chip.field`  | Yes                                                |
 | Venue            | `MapPin`       | `chip.field`  | Tile at 40 % (near-invisible, as in the reference) |
 | Team Size        | `UserRound`    | `chip.people` | Yes                                                |
@@ -105,7 +104,7 @@ palette in [colors.md](colors.md#chip-palette-ds-07).
 | Value      | `text.chip-value`, `text.primary` (real data) / `text.muted` (TBA)                                                  |
 | Label      | `text.chip-label`, `text.muted`                                                                                     |
 | Container  | No border, no background (sits on the header surface), min height 48                                                |
-| Order      | Desktop 3 × 2 in the reference order: Participation · Fee · Prize / Date & Time · Venue · Team Size                 |
+| Order      | Desktop 3 columns: Participation · Fee · Date & Time / Venue · Team Size (no Prize Pool — Phase 7.6)                |
 | Constraint | No new chip tones. Any new chip type reuses one of the three tones.                                                 |
 
 ## Tabs

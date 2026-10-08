@@ -80,10 +80,6 @@ export interface EventDetailsInput {
   /** Official wording for the "Team Size" chip, e.g. "2–4 members". */
   teamSize?: string;
   registrationFee?: string;
-  /** "Prize Pool" chip — a short value, e.g. "₹10,000". */
-  prizePool?: string;
-  /** Prizes tab — the full breakdown, one line each. */
-  prizeDetails?: readonly string[];
   date?: string;
   time?: string;
   venue?: string;
@@ -111,8 +107,6 @@ export interface EventRecord extends Omit<EventIdentity, "legacySlugs"> {
   participation: Participation | null;
   teamSize: string | null;
   registrationFee: string | null;
-  prizePool: string | null;
-  prizeDetails: string[] | null;
   date: string | null;
   time: string | null;
   venue: string | null;

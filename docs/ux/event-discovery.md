@@ -12,8 +12,8 @@ Home ─┬─ hero "Scroll to explore" ──► Events overview (H2 on Home)
 
 Events overview
   ├─ Technomedh card ──► /technomedh ─┐
-  ├─ Cultural card ────► /cultural ───┼─► Event listing ──► /events/[slug] ──► Register Now ──► Official Google Form
-  ├─ Sports card ──────► /sports ─────┘                                              (opens in new tab)
+  ├─ Cultural card ────► /cultural ───┼─► Event listing ──► /events/[slug] ──► guidelines + coordinator ──► departmental shortlisting (§8)
+  ├─ Sports card ──────► /sports ─────┘
   └─ Cultural Night ───► /cultural-night  (showcase + "What's On"; no listing, no registration — OD-14)
 ```
 
@@ -75,12 +75,13 @@ Events overview
 │ HACKATHON  (h1)                      │                              │
 │ Information Technology  (department) │        event image           │
 │                                      │                              │
-│ [Participation] [Fee]     [Prize]    │                              │
-│ [Date & Time]   [Venue]   [Team size]│                              │
+│ [Participation] [Fee]  [Date & Time] │                              │
+│ [Venue]         [Team size]          │                              │
 │                                      │                              │
-│ [ Register Now → ]  [ Download Event PDF ⤓ ]                        │
+│ [ Registration Opening Soon ]  [ View Guidelines PDF ⤓ ]            │
+│ Registration process: departmental shortlisting note                │
 └──────────────────────────────────────┴──────────────────────────────┘
- About | Rules | Eligibility | Prizes | Venue | Coordinator
+ About | Rules | Eligibility | Venue | Coordinator
  ─────────────────────────────────────────────────────────────
  tab content
 ```
@@ -100,8 +101,6 @@ Field names follow the Phase 6 data model (`EventRecord`, see [../content/event-
 | `participation`        | Chip "Participation" and listing card meta — stated by the official source, never derived from `teamSize` (P6-3)     | TBA                                                    |
 | `teamSize`             | Chip "Team Size" (official wording)                                                                                  | TBA                                                    |
 | `registrationFee`      | Chip "Registration Fee"                                                                                              | TBA                                                    |
-| `prizePool`            | Chip "Prize Pool" (short value)                                                                                      | TBA                                                    |
-| `prizeDetails`         | **Prizes** tab (full breakdown)                                                                                      | "Prize details coming soon."                           |
 | `date`, `time`         | Chip "Date & Time" (combined)                                                                                        | TBA                                                    |
 | `venue`                | Chip "Venue" + **Venue** tab (with link to `/venue`)                                                                 | Chip: TBA · Tab: "Venue will be announced."            |
 | `rules`                | **Rules** tab                                                                                                        | "Rules will be published with the official event PDF." |
@@ -109,12 +108,12 @@ Field names follow the Phase 6 data model (`EventRecord`, see [../content/event-
 | `coordinators`         | **Coordinator** tab                                                                                                  | "Coordinator details will be announced."               |
 | `registrationDeadline` | Small line under the CTA row, **only while registration is open**                                                    | Hidden (CTA already says "Registration Opening Soon")  |
 | `registrationLink`     | "Register Now" (primary CTA) — official Google Form, active only with `status` `"open"` (D7-1, D7-3)                 | CTA disabled: "Registration Opening Soon"              |
-| `pdf`                  | "Download Event PDF" (secondary CTA) — `https://` URL or `/docs/…` file (D7-8)                                       | CTA disabled: "Event PDF Coming Soon"                  |
+| `pdf`                  | "View Guidelines PDF" (secondary CTA) — `https://` URL or `/docs/…` file (D7-8)                                      | CTA disabled: "Guidelines PDF Coming Soon"             |
 | `status`               | `not-open` / `open` / `closed` — drives the CTA state; no "Completed" state (D7-4)                                   | Treated as not yet open                                |
 
 Rules:
 
-- **All six chips and all six tabs always render**, showing TBA / Coming Soon in place — this preserves the
+- **All five chips and all five tabs always render**, showing TBA / Coming Soon in place — this preserves the
   reference layout and tells visitors the information is expected, not missing. [A]
 - The reference's Hackathon description ("A 24-hour coding challenge…") and "Team Event" chip are
   placeholder copy and are **not** used (OD-03, D2).
@@ -123,10 +122,17 @@ Rules:
 
 ## 8. Registration user flow
 
+Actual ASHWAMEDH 2026 workflow (owner, Phase 7.6): 4000+ students across 14 departments, so Google
+Forms are **not** publicly open. A student reads the event page — details, guidelines PDF, coordinator —
+then the department (HOD) shortlists about 2–5 suitable students, and only they complete the
+controlled Google Form.
+
 ```
 Event detail
    │
-   ├─ registration not open ──► "Registration Opening Soon" (disabled, explains state)
+   ├─ registration not open ──► "Registration Opening Soon" (disabled)
+   │  (default)                  + note: participation is subject to departmental shortlisting;
+   │                               contact your department or the event coordinator
    │
    ├─ registration open ──────► "Register Now →" ──► official Google Form (new tab, external-link icon)
    │                                                    └─ Google handles submission & confirmation
@@ -142,6 +148,6 @@ Event detail
 - `status` values: `not-open` (default) · `open` · `closed` — one per CTA state above. There is no
   "Completed" state (D7-4).
 - "Register Now" shows only when `status` is `"open"` **and** the official Google Form link is valid
-  (D7-1, D7-3). Adding a link alone does not open registration; the deadline (free text) shows only
+  (D7-1, D7-3) — set `"open"` only when the official source says the event takes **public** registration. Adding a link alone does not open registration; the deadline (free text) shows only
   while open, and nothing closes automatically (D7-5). Invalid registration data fails the build (D7-2).
 - Dependency [E]: official Google Form URL per event. Authoring rules: `docs/content/event-data.md` §3.

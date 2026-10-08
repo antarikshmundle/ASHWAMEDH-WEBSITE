@@ -78,7 +78,10 @@ describe("display helpers", () => {
       "javascript:alert(1)",
       "/docs/../x.pdf",
     ])
-      expect(pdfState(bad), bad).toEqual({ kind: "coming-soon", label: "Event PDF Coming Soon" });
+      expect(pdfState(bad), bad).toEqual({
+        kind: "coming-soon",
+        label: "Guidelines PDF Coming Soon",
+      });
   });
 });
 

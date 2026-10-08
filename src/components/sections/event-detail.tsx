@@ -1,7 +1,6 @@
 import Link from "next/link";
 import {
   ArrowLeft,
-  Award,
   CalendarDays,
   Clock,
   Download,
@@ -23,6 +22,7 @@ import {
   participationLabel,
   pdfState,
   placeholders,
+  REGISTRATION_PROCESS,
   registrationState,
 } from "@/lib/display";
 import type { EventRecord } from "@/types/festival";
@@ -95,7 +95,6 @@ export function EventDetail({ event }: { event: EventRecord }) {
                   label="Registration Fee"
                   value={fact(event.registrationFee)}
                 />
-                <Chip icon={Award} tone="warm" label="Prize Pool" value={fact(event.prizePool)} />
                 <Chip
                   icon={CalendarDays}
                   tone="field"
@@ -125,12 +124,15 @@ export function EventDetail({ event }: { event: EventRecord }) {
                     external
                     icon={<Download aria-hidden className="size-[18px]" />}
                   >
-                    Download Event PDF
+                    View Guidelines PDF
                   </SecondaryLink>
                 ) : (
                   <DisabledCta>{pdf.label}</DisabledCta>
                 )}
               </div>
+              {registration.kind === "opening-soon" && (
+                <p className="mt-3 type-meta text-fg-muted">{REGISTRATION_PROCESS}</p>
+              )}
               {registration.kind === "open" && event.registrationDeadline && (
                 <p className="mt-3 type-meta text-fg-muted">
                   Registration deadline: {event.registrationDeadline}
@@ -163,11 +165,6 @@ export function EventDetail({ event }: { event: EventRecord }) {
                 content: (
                   <ParagraphsOr items={event.eligibility} fallback={placeholders.eligibility} />
                 ),
-              },
-              {
-                id: "prizes",
-                label: "Prizes",
-                content: <ParagraphsOr items={event.prizeDetails} fallback={placeholders.prizes} />,
               },
               {
                 id: "venue",

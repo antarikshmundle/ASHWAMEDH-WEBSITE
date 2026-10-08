@@ -11,8 +11,8 @@ Home  /
 ├── Events  /events                       Four-vertical overview (reference panel 03)
 │   ├── Technomedh  /technomedh           Vertical listing (panel 04) — 14 events
 │   ├── Cultural    /cultural             Vertical listing — 15 events
-│   ├── Sports      /sports               Vertical listing — 10 events
-│   └── Event detail  /events/[slug]      One reusable template (panel 05) — 39 pages
+│   ├── Sports      /sports               Vertical listing — 11 events
+│   └── Event detail  /events/[slug]      One reusable template (panel 05) — 40 pages
 │
 ├── Cultural Night  /cultural-night       Panel 07 — showcase + What's On; no registration (OD-14)
 ├── Schedule        /schedule             Panel 06 — "Schedule Releasing Soon"

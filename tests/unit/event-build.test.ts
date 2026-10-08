@@ -10,8 +10,6 @@ const DETAIL_FIELDS = [
   "participation",
   "teamSize",
   "registrationFee",
-  "prizePool",
-  "prizeDetails",
   "date",
   "time",
   "venue",
@@ -43,7 +41,7 @@ describe("event details registry", () => {
 
   it("is empty until official content exists — every event keeps null details", () => {
     expect(Object.keys(eventDetails)).toHaveLength(0);
-    expect(events).toHaveLength(39);
+    expect(events).toHaveLength(40);
     for (const record of events) {
       for (const field of DETAIL_FIELDS)
         expect(record[field], `${record.slug}.${field}`).toBeNull();
@@ -69,16 +67,6 @@ describe("buildEvent", () => {
   it("never invents: a source alone adds no content", () => {
     const record = buildEvent(identity, { source });
     for (const field of DETAIL_FIELDS) expect(record[field]).toBeNull();
-  });
-
-  it("keeps prize pool (chip) and prize details (tab) separate", () => {
-    const record = buildEvent(identity, {
-      source,
-      prizePool: "₹10,000",
-      prizeDetails: ["Winner: ₹6,000", "Runner-up: ₹4,000"],
-    });
-    expect(record.prizePool).toBe("₹10,000");
-    expect(record.prizeDetails).toEqual(["Winner: ₹6,000", "Runner-up: ₹4,000"]);
   });
 
   it("trims values and turns blank values and empty lists into null", () => {

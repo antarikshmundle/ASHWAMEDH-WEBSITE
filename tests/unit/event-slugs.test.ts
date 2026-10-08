@@ -27,7 +27,7 @@ describe("legacy slug redirects (Phase 6.4)", () => {
     expect(eventInventory.every((e) => !("legacySlugs" in e))).toBe(true);
   });
 
-  it("resolves all 39 live slugs as canonical and anything else as unknown", () => {
+  it("resolves all 40 live slugs as canonical and anything else as unknown", () => {
     for (const { slug } of eventInventory)
       expect(resolveEventSlug(slug)).toEqual({ kind: "canonical", slug });
     for (const slug of ["non-existent-slug", "hackathon-2026", "", "Hackathon"])

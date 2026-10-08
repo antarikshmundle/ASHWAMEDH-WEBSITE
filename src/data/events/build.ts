@@ -103,8 +103,6 @@ export function buildEvent(identity: EventIdentity, details?: EventDetailsInput)
     participation: d.participation ?? null,
     teamSize: text(d.teamSize),
     registrationFee: text(d.registrationFee),
-    prizePool: text(d.prizePool),
-    prizeDetails: list(d.prizeDetails),
     date: text(d.date),
     time: text(d.time),
     venue: text(d.venue),

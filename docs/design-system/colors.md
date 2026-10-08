@@ -116,11 +116,11 @@ accent.
 
 Values were measured from the reference chips (icon / tile) and adjusted for contrast.
 
-| Token group         | Icon      | Tile      | Icon on tile | Icon on surface | Chips                                       |
-| ------------------- | --------- | --------- | ------------ | --------------- | ------------------------------------------- |
-| `color.chip.warm`   | `#F2B347` | `#3A2208` | 8.01         | 10.15           | Participation, Registration Fee, Prize Pool |
-| `color.chip.field`  | `#E6CF5C` | `#1C2A14` | 9.67         | 12.06           | Date & Time, Venue                          |
-| `color.chip.people` | `#A99BFF` | `#1E1D63` | 6.25         | 7.91            | Team Size                                   |
+| Token group         | Icon      | Tile      | Icon on tile | Icon on surface | Chips                           |
+| ------------------- | --------- | --------- | ------------ | --------------- | ------------------------------- |
+| `color.chip.warm`   | `#F2B347` | `#3A2208` | 8.01         | 10.15           | Participation, Registration Fee |
+| `color.chip.field`  | `#E6CF5C` | `#1C2A14` | 9.67         | 12.06           | Date & Time, Venue              |
+| `color.chip.people` | `#A99BFF` | `#1E1D63` | 6.25         | 7.91            | Team Size                       |
 
 - Only these three tones exist. No other chip colours may be introduced.
 - Tiles are decorative (≈ 1.25 : 1 against the surface). The icon is always paired with a visible label.
@@ -131,13 +131,13 @@ Values were measured from the reference chips (icon / tile) and adjusted for con
 
 ## CTA colours
 
-| CTA                                                                                   | Background      | Border                                        | Label            | Hover / focus                  |
-| ------------------------------------------------------------------------------------- | --------------- | --------------------------------------------- | ---------------- | ------------------------------ |
-| Primary (e.g. Register Now)                                                           | `accent.strong` | none                                          | `text.on-accent` | `accent.base` fill + `glow.sm` |
-| Secondary (e.g. Download Event PDF)                                                   | transparent     | `border.control` → `accent.line` on hover     | `text.primary`   | border `accent.base`           |
-| Tertiary (text links with arrow)                                                      | none            | none                                          | `accent.base`    | underline + arrow shift        |
-| Status: "Coming Soon" (OD-12)                                                         | transparent     | `accent.line` (brand) + `glow.sm` (hero only) | `text.primary`   | **none** (non-interactive)     |
-| Disabled: "Registration Opening Soon", "Event PDF Coming Soon", "Registration Closed" | `bg.surface-2`  | `border.control` (dashed)                     | `text.muted`     | **none**                       |
+| CTA                                                                                        | Background      | Border                                        | Label            | Hover / focus                  |
+| ------------------------------------------------------------------------------------------ | --------------- | --------------------------------------------- | ---------------- | ------------------------------ |
+| Primary (e.g. Register Now)                                                                | `accent.strong` | none                                          | `text.on-accent` | `accent.base` fill + `glow.sm` |
+| Secondary (e.g. View Guidelines PDF)                                                       | transparent     | `border.control` → `accent.line` on hover     | `text.primary`   | border `accent.base`           |
+| Tertiary (text links with arrow)                                                           | none            | none                                          | `accent.base`    | underline + arrow shift        |
+| Status: "Coming Soon" (OD-12)                                                              | transparent     | `accent.line` (brand) + `glow.sm` (hero only) | `text.primary`   | **none** (non-interactive)     |
+| Disabled: "Registration Opening Soon", "Guidelines PDF Coming Soon", "Registration Closed" | `bg.surface-2`  | `border.control` (dashed)                     | `text.muted`     | **none**                       |
 
 ## States
 

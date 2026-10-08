@@ -8,6 +8,10 @@ import type { EventRecord, Participation } from "@/types/festival";
 export const TBA = "TBA";
 export const REGISTRATION_OPENING_SOON = "Registration Opening Soon";
 
+/** Shown on event detail while registration is not publicly open (departmental shortlisting). */
+export const REGISTRATION_PROCESS =
+  "Registration process: participation is subject to departmental shortlisting. Shortlisted students complete the official registration form — contact your department or the event coordinator for details.";
+
 /** Schedule status line; the second part is shown in the brand accent (reference panel 06). */
 export const scheduleStatus = { lead: "Schedule", accent: "Releasing Soon" } as const;
 
@@ -16,7 +20,6 @@ export const placeholders = {
   description: "Details coming soon.",
   rules: "Rules will be published with the official event PDF.",
   eligibility: "Eligibility details coming soon.",
-  prizes: "Prize details coming soon.",
   venue: "Venue will be announced.",
   coordinator: "Coordinator details will be announced.",
   venueMap: "Venue details coming soon.",
@@ -76,10 +79,10 @@ export function registrationState(
 
 export type PdfState = { kind: "available"; href: string } | { kind: "coming-soon"; label: string };
 
-/** Secondary CTA state: available only for a safe PDF link (D7-8); otherwise "Coming Soon". */
+/** Guidelines PDF CTA: available only for a safe PDF link (D7-8); otherwise "Coming Soon". */
 export function pdfState(pdf: string | null): PdfState {
   const href = pdfHref(pdf);
   return href
     ? { kind: "available", href }
-    : { kind: "coming-soon", label: "Event PDF Coming Soon" };
+    : { kind: "coming-soon", label: "Guidelines PDF Coming Soon" };
 }

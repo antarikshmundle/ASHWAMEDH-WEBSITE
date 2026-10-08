@@ -44,9 +44,10 @@ HACKATHON
 Information Technology
 [Participation] [Team Size]
 [Date & Time]   [Venue]
-[Fee]           [Prize Pool]
-[ Download Event PDF ]            ← secondary, inline
-About | Rules | Eligibility | Prizes | Venue | Coordinator   ← horizontally scrollable tab bar
+[Fee]
+[ View Guidelines PDF ]           ← secondary, inline
+Registration process: departmental shortlisting note
+About | Rules | Eligibility | Venue | Coordinator   ← horizontally scrollable tab bar
 tab content
 ─────────────────────────────────
 [ Registration Opening Soon ]     ← sticky bottom bar (primary CTA)

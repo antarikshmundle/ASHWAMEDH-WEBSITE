@@ -3,6 +3,19 @@
 Clarifications and corrections from the project owner. These take precedence over
 [master-prompt-v1.md](./master-prompt-v1.md) where they conflict. Newest first.
 
+## 2026-10-08 — Phase 7.6 (Official content / registration workflow correction)
+
+Owner corrections after the Phase 7 checkpoint (8714fb1). They take precedence over master prompt §6 and
+over the earlier entries below where they conflict.
+
+| #      | Decision                                                                                                                                                                                                                                                                                                                                                              |
+| ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| C7.6-1 | Actual registration workflow: Google Forms are not publicly open. Students read the event page (details, guidelines PDF, coordinator); each department/HOD shortlists about 2–5 students, who complete the controlled Google Form. The detail page shows a fixed "Registration process" note about departmental shortlisting while registration is not publicly open. |
+| C7.6-2 | The primary CTA keeps "Registration Opening Soon" by default. "Register Now" still needs `status: "open"` plus a valid Google Form link (D7-1, D7-3), and `"open"` is set only when the official source says the event takes public registration. Phase 7 URL validation is unchanged.                                                                                |
+| C7.6-3 | The event PDF is presented as the guidelines PDF: "View Guidelines PDF" / "Guidelines PDF Coming Soon" (rules unchanged, D7-8). Coordinator details only as officially supplied.                                                                                                                                                                                      |
+| C7.6-4 | No ASHWAMEDH 2026 event has prize information: `prizePool` and `prizeDetails` are removed from the data model, the "Prize Pool" chip and the "Prizes" tab are removed from event detail (five chips, five tabs).                                                                                                                                                      |
+| C7.6-5 | Sports adds **Tug of War** (`tug-of-war`, no department), last in the Sports order — 11 Sports events, 40 in total. No details are entered for it.                                                                                                                                                                                                                    |
+
 ## 2026-10-08 — Phase 7 (Registration Integration) — owner decisions
 
 Approved after the Phase 7.1 registration architecture audit:
