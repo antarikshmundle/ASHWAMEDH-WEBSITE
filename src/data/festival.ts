@@ -58,5 +58,8 @@ export const scheduleRows = [
   venue: string | null;
 }[];
 
-/** Official day count — unknown (OD-04). Day tabs render only when this is set. */
+/**
+ * Official festival days — unknown (OD-04). Not rendered yet: day tabs were deferred (P6-7) and
+ * arrive with the CMS schedule editor (docs/architecture/admin-cms.md, 10.5).
+ */
 export const scheduleDays: readonly { label: string; date: string | null }[] | null = null;

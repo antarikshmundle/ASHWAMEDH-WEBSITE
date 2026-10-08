@@ -20,22 +20,29 @@ npm run dev                  # http://localhost:3000
 
 ## Scripts
 
-| Script                            | What it does                            |
-| --------------------------------- | --------------------------------------- |
-| `npm run dev`                     | Start the dev server                    |
-| `npm run build`                   | Production build                        |
-| `npm run start`                   | Serve the production build              |
-| `npm run lint` / `lint:fix`       | ESLint                                  |
-| `npm run typecheck`               | TypeScript (strict)                     |
-| `npm run format` / `format:check` | Prettier (with Tailwind class sorting)  |
-| `npm run test` / `test:watch`     | Vitest                                  |
-| `npm run check`                   | typecheck + lint + format check + tests |
+| Script                            | What it does                                      |
+| --------------------------------- | ------------------------------------------------- |
+| `npm run dev`                     | Start the dev server                              |
+| `npm run build`                   | Production build                                  |
+| `npm run start`                   | Serve the production build                        |
+| `npm run lint` / `lint:fix`       | ESLint                                            |
+| `npm run typecheck`               | TypeScript (strict)                               |
+| `npm run format` / `format:check` | Prettier (with Tailwind class sorting)            |
+| `npm run test` / `test:watch`     | Vitest                                            |
+| `npm run check`                   | typecheck + lint + format check + tests           |
+| `npm run admin:hash`              | Hash the admin password for `ADMIN_PASSWORD_HASH` |
 
 ## Environment
 
-| Variable               | Required | Description                                                                                               |
-| ---------------------- | -------- | --------------------------------------------------------------------------------------------------------- |
-| `NEXT_PUBLIC_SITE_URL` | No       | Public base URL (no trailing slash). Defaults to `http://localhost:3000`. Hosting/domain not yet decided. |
+| Variable               | Required     | Description                                                                                               |
+| ---------------------- | ------------ | --------------------------------------------------------------------------------------------------------- |
+| `NEXT_PUBLIC_SITE_URL` | No           | Public base URL (no trailing slash). Defaults to `http://localhost:3000`. Hosting/domain not yet decided. |
+| `ADMIN_USERNAME`       | For `/admin` | Admin sign-in name. Server-only.                                                                          |
+| `ADMIN_PASSWORD_HASH`  | For `/admin` | scrypt hash from `npm run admin:hash` — never the password. Server-only.                                  |
+| `ADMIN_SESSION_SECRET` | For `/admin` | ≥ 32 random characters; signs admin sessions. Server-only.                                                |
+
+Without the three admin variables the public site works normally and `/admin` sign-in is disabled.
+See [docs/architecture/admin-cms.md](docs/architecture/admin-cms.md).
 
 Never commit `.env.local` or any secrets.
 

@@ -55,6 +55,7 @@ docs/             requirements/ architecture/ ux/ content/
 
 ## Configuration
 
-| Variable               | Purpose                                                                   |
-| ---------------------- | ------------------------------------------------------------------------- |
-| `NEXT_PUBLIC_SITE_URL` | Base URL for canonical/OG/sitemap. Falls back to `http://localhost:3000`. |
+| Variable                                                        | Purpose                                                                   |
+| --------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| `NEXT_PUBLIC_SITE_URL`                                          | Base URL for canonical/OG/sitemap. Falls back to `http://localhost:3000`. |
+| `ADMIN_USERNAME`, `ADMIN_PASSWORD_HASH`, `ADMIN_SESSION_SECRET` | Admin sign-in (server-only). See [admin-cms.md](admin-cms.md).            |
