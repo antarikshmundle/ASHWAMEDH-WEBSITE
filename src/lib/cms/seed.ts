@@ -55,7 +55,7 @@ export async function runSeed(store: SeedStore): Promise<SeedResult> {
   };
 }
 
-/** SeedStore on Supabase (service role). Used by scripts/cms-seed.ts. */
+/** SeedStore on Supabase (service role). Used by scripts/cms-seed.mts. */
 export function supabaseSeedStore(client: SupabaseClient): SeedStore {
   const fail = (what: string, error: { message: string } | null) => {
     if (error) throw new Error(`CMS seed: ${what} failed — ${error.message}`);

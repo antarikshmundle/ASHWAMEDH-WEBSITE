@@ -12,7 +12,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "admin:hash": "node scripts/admin-password-hash.mjs",
-    "cms:seed": "tsx scripts/cms-seed.ts",
+    "cms:seed": "tsx scripts/cms-seed.mts",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:supabase": "vitest run --config vitest.supabase.config.mts",
