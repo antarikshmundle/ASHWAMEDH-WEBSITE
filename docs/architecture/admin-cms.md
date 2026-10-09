@@ -5,9 +5,9 @@ without editing the repository. **Content** becomes admin-editable; **design** (
 typography, motion, navigation, components) stays developer-controlled. The CMS is purpose-built for
 ASHWAMEDH — not a general page builder: no arbitrary HTML, CSS or scripts.
 
-Status: **10.0 architecture**, **10.1 authentication** and **10.2 database + storage** are done.
-Nothing is editable through the admin yet; by default the public site still reads its content from
-the repository (`CMS_CONTENT_SOURCE`, below).
+Status: **10.0 architecture**, **10.1 authentication**, **10.2 database + storage** and **10.3 event
+editor** are done. Event content is editable at `/admin/events`; the public site shows it when it reads
+from the database (`CMS_CONTENT_SOURCE=database`, below).
 
 ## 10.0 — Findings (baseline 5314e95)
 
@@ -23,7 +23,7 @@ the repository (`CMS_CONTENT_SOURCE`, below).
 | H   | TBA / Coming Soon          | Columns are nullable; blank input is saved as `null`; the display layer is unchanged, so `null` still renders as TBA / Coming Soon. The CMS never stores placeholder text.                                                                                                                        |
 | I   | Files                      | Object storage, metadata in the database. Guidelines PDFs: `application/pdf`, checked by content (`%PDF-`), size-limited. Images: JPEG / PNG / WebP, sniffed and size-limited. Server-generated object names; no user-supplied paths or extensions.                                               |
 | J   | Authentication             | 10.1: one administrator configured by environment variables, scrypt-hashed password, signed `httpOnly` session cookie. Later (with the database): optional named accounts and roles, server-side session revocation, audit log.                                                                   |
-| K   | Route protection           | `src/proxy.ts` (admin routes only, optimistic redirect) + `requireAdmin()` in every admin page and Server Action (the real check).                                                                                                                                                                |
+| K   | Route protection           | `src/proxy.ts` (admin routes, optimistic redirect; since 10.3 also the event-page slug guard) + `requireAdmin()` in every admin page and Server Action (the real check).                                                                                                                          |
 | L   | Public consumption         | Pages keep calling the same data functions (`events`, `getEventBySlug`, …). Their implementation reads saved details and passes them through the same `buildEvent()` validation. Pages stay statically rendered and are revalidated on save, so the public site stays as fast as today.           |
 | M   | Deployment                 | Admin routes need a Node.js server (Vercel or `next start`); the public pages remain static. A pure static export is no longer possible once the admin exists.                                                                                                                                    |
 | N   | Backup / rollback          | Database point-in-time recovery from the provider, plus a revisions table (previous version of every saved entry) for one-click rollback. Files are never overwritten — a replaced PDF gets a new object; the old one is kept until cleaned up.                                                   |
@@ -50,16 +50,16 @@ Public visitor ──► static pages ◄── data layer ── buildEvent() /
 
 ## 10.1 — Authentication (implemented)
 
-| Part        | Implementation                                                                                                                                                                                                                                                               |
-| ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Routes      | `/admin/login` (sign-in form, works without JavaScript), `/admin` (dashboard; lists the planned sections, none editable yet). Both `noindex`, `no-store`, outside the public header/footer (`PublicChrome`).                                                                 |
-| Credentials | `ADMIN_USERNAME` + `ADMIN_PASSWORD_HASH` (scrypt N=32768, r=8, p=1, 16-byte salt, 64-byte key; format `scrypt:N:r:p:salt:hash`). Generate with `npm run admin:hash`. No plain-text password anywhere, no default account; incomplete configuration disables sign-in.         |
-| Session     | Stateless token `payload.signature`, HMAC-SHA-256 with `ADMIN_SESSION_SECRET` (≥ 32 chars). 8-hour lifetime. Bound to the current password hash: changing the password, or rotating the secret, signs everyone out.                                                          |
-| Cookie      | `ashwamedh_admin_session`: `HttpOnly`, `Secure` in production, `SameSite=Strict`, `Path=/admin`, `Max-Age` 8 h. Set and cleared only in Server Actions.                                                                                                                      |
-| Checks      | `src/proxy.ts` (matcher `/admin`, `/admin/:path*`) redirects signed-out requests to `/admin/login`; `requireAdmin()` (`src/lib/admin/auth.ts`, `server-only`) re-verifies in every admin page and action. Next.js rejects cross-origin Server Action calls (Origin vs Host). |
-| Throttling  | 5 failed attempts per client in 15 min → that client locked 15 min; 50 failures overall → sign-in locked 15 min. In memory, per instance — replaced by a shared store with the database.                                                                                     |
-| Timing      | Username compared with `timingSafeEqual` on SHA-256 digests; the password hash is always computed.                                                                                                                                                                           |
-| Sign-out    | Expires the cookie (same name, path and flags) and returns to the sign-in page.                                                                                                                                                                                              |
+| Part        | Implementation                                                                                                                                                                                                                                                                                                        |
+| ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Routes      | `/admin/login` (sign-in form, works without JavaScript), `/admin` (dashboard; lists the planned sections, none editable yet). Both `noindex`, `no-store`, outside the public header/footer (`PublicChrome`).                                                                                                          |
+| Credentials | `ADMIN_USERNAME` + `ADMIN_PASSWORD_HASH` (scrypt N=32768, r=8, p=1, 16-byte salt, 64-byte key; format `scrypt:N:r:p:salt:hash`). Generate with `npm run admin:hash`. No plain-text password anywhere, no default account; incomplete configuration disables sign-in.                                                  |
+| Session     | Stateless token `payload.signature`, HMAC-SHA-256 with `ADMIN_SESSION_SECRET` (≥ 32 chars). 8-hour lifetime. Bound to the current password hash: changing the password, or rotating the secret, signs everyone out.                                                                                                   |
+| Cookie      | `ashwamedh_admin_session`: `HttpOnly`, `Secure` in production, `SameSite=Strict`, `Path=/admin`, `Max-Age` 8 h. Set and cleared only in Server Actions.                                                                                                                                                               |
+| Checks      | `src/proxy.ts` (matcher `/admin`, `/admin/:path*`; `/events/:slug` for the 10.3 slug guard) redirects signed-out requests to `/admin/login`; `requireAdmin()` (`src/lib/admin/auth.ts`, `server-only`) re-verifies in every admin page and action. Next.js rejects cross-origin Server Action calls (Origin vs Host). |
+| Throttling  | 5 failed attempts per client in 15 min → that client locked 15 min; 50 failures overall → sign-in locked 15 min. In memory, per instance — replaced by a shared store with the database.                                                                                                                              |
+| Timing      | Username compared with `timingSafeEqual` on SHA-256 digests; the password hash is always computed.                                                                                                                                                                                                                    |
+| Sign-out    | Expires the cookie (same name, path and flags) and returns to the sign-in page.                                                                                                                                                                                                                                       |
 
 ### Setting up the administrator
 
@@ -104,8 +104,9 @@ repository: inventory.ts (identity, frozen)   database: events_content + event_c
   serving a page does not query the database.
 - Tags: `cms:events` (all rows — the three listing pages) and `cms:event:<slug>` (one event page).
 - `expireEventContent(slug)` (`src/lib/cms/revalidate.ts`, admin-only) calls `updateTag` for that event
-  and the listings only. The admin editors (10.3+) call it from their Server Actions after a save; the
-  next visit renders fresh content. Other event pages keep their cache.
+  and the listings only. The event editor (10.3) calls it from its Server Action after a save; the next
+  visit renders fresh content. Other event pages keep their cache. Event pages need the proxy slug guard
+  for this — see 10.3.
 - If a regeneration fails (database down, invalid row), Next.js keeps serving the last good page.
 
 ### Schema (`supabase/migrations/`)
@@ -124,8 +125,7 @@ Cultural Night registration — the unused `culturalNight.registrationLink` was 
 Row-level security is on with no policies, and `anon` / `authenticated` have no privileges: only the
 server can read or write.
 
-**Revisions:** not yet. Phase 10.3 adds an `events_content_revisions` table (previous row and coordinators
-as JSON, plus when) written by the editor's save action, with restore from the admin UI.
+**Revisions:** `events_content_revisions` (added in 10.3) — see the event editor below.
 
 ### Storage
 
@@ -184,11 +184,64 @@ as JSON, plus when) written by the editor's save action, with restore from the a
 
 ### Known limitations
 
-- No editor UI yet; content changes still need the repository or SQL until 10.3.
 - The sign-in throttle is still per instance (it moves to the database later).
 - Storage images are not rendered until 10.4 (see above).
 - The seed fills missing rows only; it does not copy later repository edits into existing rows. Once
   seeded, the database is the source of truth for content.
+
+## 10.3 — Event editor (implemented)
+
+### Routes
+
+| Route                  | What it does                                                                                                                                 |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/admin/events`        | The 40 frozen events by vertical: content entered or all TBA, registration status, last update (IST).                                        |
+| `/admin/events/[slug]` | Editor for one event. Identity (name, vertical, department, slug) is shown read-only. Unknown slugs 404; there is no way to create an event. |
+
+Both call `requireAdmin()`; the proxy also redirects signed-out requests. A notice says when the public site
+reads repository content (`CMS_CONTENT_SOURCE` ≠ `database`), because saves are then not published.
+
+### Editable vs fixed
+
+| Editable (content)                                                                                                                                                                                                       | Fixed (identity / later phases)                                                                                                                                |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Description, rules, eligibility, participation, team size, fee, date, time, venue, registration status / Google Form link / deadline, guidelines PDF link, coordinators (name, designation, phone, email, order), source | Slug, name, department, vertical, order (repository). Event image and uploaded files (10.4, shown read-only). No prize fields. No Cultural Night registration. |
+
+An empty field is saved as `NULL` and the site shows TBA / Coming Soon.
+
+### Save flow
+
+```
+editor form (client, useActionState) → editorAction (Server Action; intent save | restore)
+  requireAdmin() → slug ∈ inventory → validateEventForm() (src/lib/cms/event-form.ts)
+  → buildEvent() final check → rpc cms_save_event (one transaction) → expireEventContent(slug)
+```
+
+- **Validation** (server; the database repeats it): trim, blank → NULL; length limits; registration open
+  only with an official Google Form (`registrationHref`); guidelines link `https://` or `/docs/…`
+  (`pdfHref`); coordinator phone / email (`contactHref`); a complete source as soon as any content — or an
+  image / uploaded file — exists; finally `buildEvent()` must accept the result.
+- **`cms_save_event`** (`supabase/migrations/…_cms_event_editor.sql`): locks the row, compares
+  `updated_at` with the version the editor loaded (optimistic concurrency), writes the previous content and
+  coordinators to `events_content_revisions`, updates the editable columns only (image / file columns are
+  untouched), replaces the coordinators — all or nothing. Executable by the service role only.
+- **Outcomes in the UI:** field errors with a linked summary (focus moves to it, values are kept); saved /
+  restored (with a link to the public page); conflict ("changed in another tab or session" — nothing saved,
+  the edits stay in the form); database failure ("nothing was changed"); not seeded. An "Unsaved changes"
+  indicator and a leave-page warning guard unsaved edits.
+- **Revisions:** every save keeps the previous version; the editor lists the latest 20 and can restore one
+  (after a confirmation). A restore is validated and saved like an edit, so it is itself undoable.
+
+### Event pages refresh after a save (proxy guard)
+
+Event pages are prerendered and tagged `cms:event:<slug>`. With `dynamicParams = false`, Next.js 16 does
+not re-render such a page once its tag is expired — it keeps serving the old page. `/events/[slug]`
+therefore has `dynamicParams = true`, and `src/proxy.ts` lets only exact inventory / former slugs reach the
+route; any other value (unknown, wrongly cased, encoded) is rewritten to the 404 page. Without the guard,
+every unknown URL would be rendered and cached on disk, and on case-insensitive file systems a URL such
+as `/events/Hackathon` would overwrite the real page's cache entry. Verified: after a save, the next visit
+to that event (and its listing) shows the new content; other event pages stay cached; unknown URLs return
+404 and add nothing to the route cache.
 
 ## Environment
 
@@ -204,11 +257,11 @@ as JSON, plus when) written by the editor's save action, with restore from the a
 
 ## Next milestones
 
-| Milestone | Scope                                                                                                                                                                       |
-| --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 10.2      | Done — Supabase schema and storage, idempotent seed, database-backed data layer through `buildEvent()`, targeted revalidation helper.                                       |
-| 10.3      | Event editor (details, coordinators, registration with the D7 rules, source) with server-side validation, a revisions table with restore, and `expireEventContent` on save. |
-| 10.4      | File manager (guidelines PDFs, event images) on object storage.                                                                                                             |
-| 10.5      | Schedule (`scheduleDays` + rows), Cultural Night dates, festival settings, contact / footer / social links.                                                                 |
-| 10.6      | Gallery and Team (data model + public rendering of official content only).                                                                                                  |
-| 10.7      | QA, security review, backup / rollback drill, runbook.                                                                                                                      |
+| Milestone | Scope                                                                                                                                                                 |
+| --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 10.2      | Done — Supabase schema and storage, idempotent seed, database-backed data layer through `buildEvent()`, targeted revalidation helper.                                 |
+| 10.3      | Done — event editor with server-side validation, atomic save (`cms_save_event`), optimistic concurrency, revisions with restore, targeted refresh (proxy slug guard). |
+| 10.4      | File manager (guidelines PDFs, event images) on object storage.                                                                                                       |
+| 10.5      | Schedule (`scheduleDays` + rows), Cultural Night dates, festival settings, contact / footer / social links.                                                           |
+| 10.6      | Gallery and Team (data model + public rendering of official content only).                                                                                            |
+| 10.7      | QA, security review, backup / rollback drill, runbook.                                                                                                                |

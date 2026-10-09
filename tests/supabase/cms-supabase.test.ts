@@ -79,4 +79,67 @@ describe("Supabase CMS (live project)", () => {
       await client.storage.from(BUCKETS.documents).remove([path]);
     }
   });
+  it("saves through cms_save_event atomically, rejects stale versions, and is reverted", async () => {
+    const slug = "carrom";
+    const read = async () => {
+      const { data, error } = await client
+        .from(CMS_TABLES.events)
+        .select("venue, source_kind, updated_at")
+        .eq("event_slug", slug)
+        .single();
+      if (error) throw new Error(error.message);
+      return data as { venue: string | null; source_kind: string | null; updated_at: string };
+    };
+    const before = await read();
+    const save = (version: string, content: object, coordinators: object[] = []) =>
+      client.rpc("cms_save_event", {
+        p_slug: slug,
+        p_expected_updated_at: version,
+        p_content: content,
+        p_coordinators: coordinators,
+      });
+    const qa = {
+      venue: "QA-TEMP — not official (reverted)",
+      registration_status: "not-open",
+      source_kind: "owner-confirmed",
+      source_reference: "QA temporary check",
+      source_date: "2026-10-09",
+    };
+    const revisionIds = async () =>
+      new Set(
+        (
+          (await client.from("events_content_revisions").select("id").eq("event_slug", slug))
+            .data ?? []
+        ).map((r: { id: string }) => r.id),
+      );
+    const existingRevisions = await revisionIds();
+    try {
+      const saved = await save(before.updated_at, qa, [
+        { name: "QA Temp", designation: null, phone: null, email: null, sort_order: 0 },
+      ]);
+      expect(saved.error).toBeNull();
+      expect((await read()).venue).toBe(qa.venue);
+      const stale = await save(before.updated_at, { registration_status: "not-open" });
+      expect(stale.error?.message).toMatch(/cms_version_conflict/);
+      const invalid = await save((await read()).updated_at, { ...qa, registration_status: "open" });
+      expect(invalid.error).not.toBeNull();
+      expect((await read()).venue).toBe(qa.venue);
+    } finally {
+      const reverted = await save(
+        (await read()).updated_at,
+        { registration_status: "not-open" },
+        [],
+      );
+      expect(reverted.error).toBeNull();
+      const after = await read();
+      expect(after.venue).toBeNull();
+      expect(after.source_kind).toBeNull();
+      // Remove the history rows this test created (they hold only QA text).
+      const created = [...(await revisionIds())].filter((id) => !existingRevisions.has(id));
+      if (created.length) await client.from("events_content_revisions").delete().in("id", created);
+      expect([...(await revisionIds())].sort()).toEqual([...existingRevisions].sort());
+      const coords = await client.from(CMS_TABLES.coordinators).select("id").eq("event_slug", slug);
+      expect(coords.data).toEqual([]);
+    }
+  });
 });

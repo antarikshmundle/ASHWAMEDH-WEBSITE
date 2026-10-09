@@ -310,9 +310,31 @@ describe("admin proxy (optimistic check)", () => {
     return { response: await proxy(request), matcher: proxyConfig.matcher };
   }
 
-  it("only runs on admin routes", async () => {
+  it("runs only on admin routes and single event pages", async () => {
     const { matcher } = await run("/admin");
-    expect(matcher).toEqual(["/admin", "/admin/:path*"]);
+    expect(matcher).toEqual(["/admin", "/admin/:path*", "/events/:slug"]);
+  });
+
+  it("lets only exact inventory slugs reach event pages (Phase 10.3)", async () => {
+    for (const slug of ["hackathon", "tug-of-war", "100m-running"]) {
+      const { response } = await run(`/events/${slug}`);
+      expect(response.headers.get("x-middleware-rewrite"), slug).toBeNull();
+      expect(response.headers.get("location"), slug).toBeNull();
+      expect(response.headers.get("x-robots-tag"), slug).toBeNull();
+    }
+    for (const slug of [
+      "Hackathon",
+      "HACKATHON",
+      "hackathon-2026",
+      "not-an-event",
+      "cultural-night",
+      "%68ackathon",
+    ]) {
+      const { response } = await run(`/events/${slug}`);
+      expect(response.headers.get("x-middleware-rewrite"), slug).toBe(
+        "http://localhost:3000/_event-not-found",
+      );
+    }
   });
 
   it("sends signed-out visitors to the sign-in page, marked noindex and no-store", async () => {

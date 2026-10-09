@@ -239,7 +239,7 @@ describe("CMS secret safety", async () => {
   });
 
   it("marks every module that holds the service-role client as server-only", () => {
-    for (const name of ["server.ts", "events.ts", "files.ts", "revalidate.ts"])
+    for (const name of ["server.ts", "events.ts", "files.ts", "revalidate.ts", "admin-events.ts"])
       expect(readFileSync(join(SRC, "lib", "cms", name), "utf8"), name).toMatch(
         /^import "server-only";/,
       );

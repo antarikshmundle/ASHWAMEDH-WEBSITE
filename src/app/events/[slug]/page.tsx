@@ -10,8 +10,13 @@ import { baseOpenGraph } from "@/lib/metadata";
 /**
  * All event pages are generated at build time, plus one redirect per former slug
  * (none today). Unknown slugs 404.
+ *
+ * dynamicParams is on so that an event page can be regenerated after its CMS content is saved
+ * (Phase 10.3) — with it off, Next.js keeps serving the old page once its cache tag expires.
+ * Unknown or wrongly-cased slugs never reach this route: src/proxy.ts sends them to the 404 page,
+ * so they are not rendered or cached here. The notFound() below is a second line of defence.
  */
-export const dynamicParams = false;
+export const dynamicParams = true;
 
 export function generateStaticParams() {
   return [...eventInventory.map((event) => event.slug), ...legacyEventSlugs].map((slug) => ({

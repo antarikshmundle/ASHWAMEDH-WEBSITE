@@ -285,3 +285,194 @@ describe("CMS constraints (PostgreSQL)", () => {
     expect(rows[0]!.guidelines_file_id).toBeNull();
   });
 });
+
+describe("event editor save (cms_save_event, Phase 10.3)", () => {
+  const SLUG = "chess";
+  const version = async (slug = SLUG) =>
+    (
+      await db.query<{ v: string }>(
+        "select updated_at::text as v from public.events_content where event_slug = $1",
+        [slug],
+      )
+    ).rows[0]!.v;
+  const save = (expected: string, content: object, coordinators: object[] = [], slug = SLUG) =>
+    db.query<{ saved: string }>(
+      "select public.cms_save_event($1, $2::timestamptz, $3::jsonb, $4::jsonb)::text as saved",
+      [slug, expected, JSON.stringify(content), JSON.stringify(coordinators)],
+    );
+  const failure = async (fn: () => Promise<unknown>) => {
+    try {
+      await fn();
+      return "";
+    } catch (error) {
+      return (error as Error).message;
+    }
+  };
+  const content = (extra: object = {}) => ({
+    venue: "Main Ground",
+    registration_status: "not-open",
+    source_kind: "owner-confirmed",
+    source_reference: "Test fixture",
+    source_date: "2026-10-09",
+    ...extra,
+  });
+  const revisions = async () =>
+    (
+      await db.query<{ n: number }>(
+        "select count(*)::int as n from public.events_content_revisions where event_slug = $1",
+        [SLUG],
+      )
+    ).rows[0]!.n;
+
+  it("saves content and coordinators atomically, recording the previous version", async () => {
+    const before = await version();
+    const result = await save(before, content(), [
+      { name: "B. Coordinator", designation: null, phone: null, email: null, sort_order: 1 },
+      {
+        name: "A. Coordinator",
+        designation: "Faculty Coordinator",
+        phone: "+91 98765 43210",
+        email: "a@pce.ac.in",
+        sort_order: 0,
+      },
+    ]);
+    expect(result.rows[0]!.saved).not.toBe(before);
+    const row = (
+      await db.query<Record<string, unknown>>(
+        "select * from public.events_content where event_slug = $1",
+        [SLUG],
+      )
+    ).rows[0]!;
+    expect(row).toMatchObject({
+      venue: "Main Ground",
+      source_kind: "owner-confirmed",
+      registration_status: "not-open",
+    });
+    const coords = await db.query<{ name: string }>(
+      "select name from public.event_coordinators where event_slug = $1 order by sort_order",
+      [SLUG],
+    );
+    expect(coords.rows.map((c) => c.name)).toEqual(["A. Coordinator", "B. Coordinator"]);
+    const revision = await db.query<{ content: Record<string, unknown>; coordinators: unknown[] }>(
+      "select content, coordinators from public.events_content_revisions where event_slug = $1 order by saved_at desc limit 1",
+      [SLUG],
+    );
+    expect(revision.rows[0]!.content).toMatchObject({
+      event_slug: SLUG,
+      venue: null,
+      source_kind: null,
+    });
+    expect(revision.rows[0]!.content).not.toHaveProperty("updated_at");
+    expect(revision.rows[0]!.coordinators).toEqual([]);
+  });
+
+  it("replaces coordinators and keeps the previous ones in the revision", async () => {
+    await save(await version(), content(), []);
+    const coords = await db.query("select 1 from public.event_coordinators where event_slug = $1", [
+      SLUG,
+    ]);
+    expect(coords.rows).toHaveLength(0);
+    const revision = await db.query<{ coordinators: { name: string }[] }>(
+      "select coordinators from public.events_content_revisions where event_slug = $1 order by saved_at desc limit 1",
+      [SLUG],
+    );
+    expect(revision.rows[0]!.coordinators.map((c) => c.name)).toEqual([
+      "A. Coordinator",
+      "B. Coordinator",
+    ]);
+  });
+
+  it("rejects a stale version (optimistic concurrency) and changes nothing", async () => {
+    const current = await version();
+    const count = await revisions();
+    expect(await failure(() => save("2000-01-01T00:00:00Z", content({ venue: "Stale" })))).toMatch(
+      /cms_version_conflict/,
+    );
+    expect(await version()).toBe(current);
+    expect(await revisions()).toBe(count);
+  });
+
+  it("rolls back completely when any part is invalid", async () => {
+    const current = await version();
+    const count = await revisions();
+    for (const [label, run] of [
+      [
+        "unsafe registration link",
+        () =>
+          save(
+            current,
+            content({ registration_status: "open", registration_url: "https://evil.example/f" }),
+          ),
+      ],
+      ["open without a link", () => save(current, content({ registration_status: "open" }))],
+      [
+        "content without a source",
+        () => save(current, { venue: "Hall A", registration_status: "not-open" }),
+      ],
+      ["blank value", () => save(current, content({ team_size: "  " }))],
+      [
+        "bad coordinator email",
+        () =>
+          save(current, content(), [
+            { name: "X", designation: null, phone: null, email: "nope", sort_order: 0 },
+          ]),
+      ],
+      ["unknown event", () => save(current, content(), [], "not-an-event")],
+    ] as const)
+      expect(await failure(run), label).not.toBe("");
+    expect(await version()).toBe(current);
+    expect(await revisions()).toBe(count);
+  });
+
+  const row = async () =>
+    (
+      await db.query<Record<string, unknown>>(
+        "select * from public.events_content where event_slug = $1",
+        [SLUG],
+      )
+    ).rows[0]!;
+
+  it("leaves image / file columns untouched (they belong to the file manager)", async () => {
+    await db.query(
+      "update public.events_content set image_path = '/images/events/chess.webp' where event_slug = $1",
+      [SLUG],
+    );
+    await save(await version(), content({ venue: "Hall B" }), []);
+    expect(await row()).toMatchObject({ venue: "Hall B", image_path: "/images/events/chess.webp" });
+    // An image is content too: its source cannot be removed while it is there.
+    expect(
+      await failure(async () => save(await version(), { registration_status: "not-open" })),
+    ).toMatch(/events_content_content_needs_source/);
+    await db.query("update public.events_content set image_path = null where event_slug = $1", [
+      SLUG,
+    ]);
+  });
+
+  it("clears every field back to NULL (TBA) when the content is removed", async () => {
+    await save(await version(), { registration_status: "not-open" }, []);
+    expect(await row()).toMatchObject({
+      venue: null,
+      source_kind: null,
+      source_reference: null,
+      source_date: null,
+      registration_status: "not-open",
+    });
+  });
+
+  it("is executable only by the service role; revisions are private", async () => {
+    const can = async (role: string) =>
+      (
+        await db.query<{ ok: boolean }>(
+          "select has_function_privilege($1, 'public.cms_save_event(text, timestamptz, jsonb, jsonb)', 'execute') as ok",
+          [role],
+        )
+      ).rows[0]!.ok;
+    expect(await can("anon")).toBe(false);
+    expect(await can("authenticated")).toBe(false);
+    expect(await can("service_role")).toBe(true);
+    const rls = await db.query<{ relrowsecurity: boolean }>(
+      "select relrowsecurity from pg_class where relname = 'events_content_revisions'",
+    );
+    expect(rls.rows[0]!.relrowsecurity).toBe(true);
+  });
+});
