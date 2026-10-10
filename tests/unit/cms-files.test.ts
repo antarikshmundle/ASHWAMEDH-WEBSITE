@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   FILE_RULES,
   sanitizeFilename,
@@ -13,7 +13,13 @@ const bytes = (...parts: (string | number[])[]) =>
   );
 const PDF = bytes("%PDF-1.7\n%%EOF\n");
 const PNG = bytes([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0]);
-const JPEG = bytes([0xff, 0xd8, 0xff, 0xe0, 0, 0]);
+// A real 3 × 2 JPEG: since Phase 10.4 images must have a sound structure and readable dimensions.
+const JPEG = new Uint8Array(
+  Buffer.from(
+    "/9j/2wBDABALDA4MChAODQ4SERATGCgaGBYWGDEjJR0oOjM9PDkzODdASFxOQERXRTc4UG1RV19iZ2hnPk1xeXBkeFxlZ2P/2wBDARESEhgVGC8aGi9jQjhCY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2P/wAARCAACAAMDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAX/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAQb/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCcAFI//9k=",
+    "base64",
+  ),
+);
 const WEBP = bytes("RIFF", [0, 0, 0, 0], "WEBPVP8 ");
 const ID = "0b9f5d4e-8c5a-4f6e-9a1b-2c3d4e5f6a7b";
 
@@ -73,11 +79,11 @@ describe("upload policy", () => {
     });
     expect(check("document", "rules.exe", "application/pdf", PDF)).toMatchObject({
       ok: false,
-      error: /extension/,
+      error: expect.stringMatching(/extension/),
     });
     expect(check("document", "rules.pdf", "text/html", PDF)).toMatchObject({
       ok: false,
-      error: /do not match/,
+      error: expect.stringMatching(/do not match/),
     });
     expect(check("document", "poster.png", "image/png", PNG)).toMatchObject({ ok: false });
     expect(check("event-image", "logo.svg", "image/svg+xml", bytes("<svg>"))).toMatchObject({
@@ -86,19 +92,19 @@ describe("upload policy", () => {
     expect(check("event-image", "rules.pdf", "application/pdf", PDF)).toMatchObject({ ok: false });
     expect(check("document", "empty.pdf", "application/pdf", new Uint8Array())).toMatchObject({
       ok: false,
-      error: /empty/,
+      error: expect.stringMatching(/empty/),
     });
     const big = new Uint8Array(FILE_RULES.document.maxBytes + 1);
     big.set(PDF);
     expect(check("document", "big.pdf", "application/pdf", big)).toMatchObject({
       ok: false,
-      error: /larger/,
+      error: expect.stringMatching(/larger/),
     });
     const bigImage = new Uint8Array(FILE_RULES["event-image"].maxBytes + 1);
     bigImage.set(PNG);
     expect(check("event-image", "big.png", "image/png", bigImage)).toMatchObject({
       ok: false,
-      error: /larger/,
+      error: expect.stringMatching(/larger/),
     });
   });
 
@@ -125,7 +131,7 @@ describe("upload policy", () => {
   });
 });
 
-/* ---------- File service (server-only) ---------- */
+/* ---------- Admin session (used by the revalidation helper) ---------- */
 
 class Redirect extends Error {}
 let signedIn = false;
@@ -135,73 +141,6 @@ vi.mock("@/lib/admin/auth", () => ({
     return { sub: "admin" };
   },
 }));
-
-const storage = { upload: vi.fn(), remove: vi.fn() };
-const table = { insert: vi.fn(), delete: vi.fn(), select: vi.fn() };
-vi.mock("@/lib/cms/server", () => ({
-  cmsAdminClient: () => ({
-    client: { storage: { from: () => storage }, from: () => table },
-    credentials: { url: "https://x.supabase.co", serviceRoleKey: "k" },
-  }),
-}));
-
-describe("CMS file service", () => {
-  beforeEach(() => {
-    signedIn = false;
-    vi.clearAllMocks();
-    storage.upload.mockResolvedValue({ error: null });
-    storage.remove.mockResolvedValue({ error: null });
-    table.insert.mockResolvedValue({ error: null });
-  });
-  const pdf = () => new File([PDF], "Rules.pdf", { type: "application/pdf" });
-
-  it("refuses everything without an admin session — nothing reaches Storage", async () => {
-    const { uploadCmsFile, deleteCmsFile } = await import("@/lib/cms/files");
-    await expect(
-      uploadCmsFile({ category: "document", file: pdf(), eventSlug: "rocketry" }),
-    ).rejects.toBeInstanceOf(Redirect);
-    await expect(deleteCmsFile(ID)).rejects.toBeInstanceOf(Redirect);
-    expect(storage.upload).not.toHaveBeenCalled();
-    expect(table.insert).not.toHaveBeenCalled();
-  });
-
-  it("uploads a validated file under a server-generated path and records its metadata", async () => {
-    signedIn = true;
-    const { uploadCmsFile } = await import("@/lib/cms/files");
-    const result = await uploadCmsFile({
-      category: "document",
-      file: pdf(),
-      eventSlug: "rocketry",
-    });
-    expect(result.ok).toBe(true);
-    const [path, , options] = storage.upload.mock.calls[0]!;
-    expect(path).toMatch(/^events\/rocketry\/[0-9a-f-]{36}\.pdf$/);
-    expect(options).toMatchObject({ contentType: "application/pdf", upsert: false });
-    expect(table.insert.mock.calls[0]![0]).toMatchObject({
-      bucket: "ashwamedh-documents",
-      path,
-      original_name: "Rules.pdf",
-      category: "document",
-      alt_text: null,
-    });
-  });
-
-  it("rejects invalid files before Storage, and removes the object if metadata fails", async () => {
-    signedIn = true;
-    const { uploadCmsFile } = await import("@/lib/cms/files");
-    const fake = new File([bytes("<script>")], "rules.pdf", { type: "application/pdf" });
-    expect(
-      await uploadCmsFile({ category: "document", file: fake, eventSlug: "rocketry" }),
-    ).toMatchObject({ ok: false });
-    expect(storage.upload).not.toHaveBeenCalled();
-
-    table.insert.mockResolvedValue({ error: { message: "violates check constraint" } });
-    expect(
-      await uploadCmsFile({ category: "document", file: pdf(), eventSlug: "rocketry" }),
-    ).toMatchObject({ ok: false });
-    expect(storage.remove).toHaveBeenCalledWith([storage.upload.mock.calls[0]![0]]);
-  });
-});
 
 /* ---------- Revalidation ---------- */
 

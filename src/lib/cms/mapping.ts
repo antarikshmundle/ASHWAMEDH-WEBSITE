@@ -1,7 +1,12 @@
 import { buildEvent } from "@/data/events/build";
 import type { Coordinator, EventDetailsInput, EventIdentity } from "@/types/festival";
 import { publicFileUrl } from "./client";
-import type { CoordinatorRow, EventContentRecord, EventContentRow } from "./schema";
+import {
+  BUCKETS,
+  type CoordinatorRow,
+  type EventContentRecord,
+  type EventContentRow,
+} from "./schema";
 
 /**
  * Database rows ⇄ domain details (Phase 10.2). The domain layer (buildEvent) stays the single
@@ -9,6 +14,26 @@ import type { CoordinatorRow, EventContentRecord, EventContentRow } from "./sche
  */
 
 const some = <T>(value: T | null | undefined): T | undefined => value ?? undefined;
+
+const UUID_NAME = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}";
+
+/**
+ * A linked file only when it is exactly what the media service stores for this event: the right
+ * bucket and `events/<slug>/<uuid>.<ext>` (the database enforces the same). Anything else is
+ * ignored, so the page falls back to its abstract art / "Coming Soon" instead of a wrong file.
+ */
+function storedFile(
+  slug: string,
+  file: EventContentRecord["image_file"],
+  bucket: string,
+  extensions: string,
+) {
+  if (!file) return undefined;
+  const expected = new RegExp(`^events/${slug}/${UUID_NAME}\\.(${extensions})$`);
+  if (file.bucket === bucket && expected.test(file.path)) return file;
+  console.warn(`[cms] ignoring an unexpected file reference for "${slug}"`);
+  return undefined;
+}
 
 /**
  * A content row as `EventDetailsInput`, or `undefined` when the row holds no content yet
@@ -22,7 +47,10 @@ export function recordToDetails(
   const coordinators: Coordinator[] = [...(record.event_coordinators ?? [])]
     .sort((a, b) => a.sort_order - b.sort_order)
     .map(({ name, designation, phone, email }) => ({ name, designation, phone, email }));
-  const fileUrl = (file: EventContentRecord["image_file"]) =>
+  const slug = record.event_slug;
+  const imageFile = storedFile(slug, record.image_file, BUCKETS.images, "jpg|png|webp");
+  const guidelinesFile = storedFile(slug, record.guidelines_file, BUCKETS.documents, "pdf");
+  const fileUrl = (file: EventContentRecord["image_file"] | undefined) =>
     file ? publicFileUrl(projectUrl, file.bucket, file.path) : undefined;
 
   const details: Omit<EventDetailsInput, "source"> = {
@@ -35,8 +63,10 @@ export function recordToDetails(
     date: some(record.event_date),
     time: some(record.event_time),
     venue: some(record.venue),
-    image: fileUrl(record.image_file) ?? some(record.image_path),
-    pdf: fileUrl(record.guidelines_file) ?? some(record.guidelines_url),
+    image: fileUrl(imageFile) ?? some(record.image_path),
+    // Alt text belongs to an uploaded image; repository paths have none (decorative).
+    imageAlt: imageFile ? some(imageFile.alt_text) : undefined,
+    pdf: fileUrl(guidelinesFile) ?? some(record.guidelines_url),
     registrationLink: some(record.registration_url),
     registrationDeadline: some(record.registration_deadline),
     status: record.registration_status === "not-open" ? undefined : record.registration_status,

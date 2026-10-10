@@ -22,11 +22,11 @@ const OFFICIAL_ONLY: (keyof EventRecord)[] = [
 ];
 
 describe("event inventory (master prompt §6 + decisions log)", () => {
-  it("has exactly 14 Technomedh, 15 Cultural and 11 Sports events", () => {
-    expect(getEventsByVertical("technomedh")).toHaveLength(14);
+  it("has exactly 15 Technomedh, 15 Cultural and 11 Sports events", () => {
+    expect(getEventsByVertical("technomedh")).toHaveLength(15);
     expect(getEventsByVertical("cultural")).toHaveLength(15);
     expect(getEventsByVertical("sports")).toHaveLength(11);
-    expect(events).toHaveLength(40);
+    expect(events).toHaveLength(41);
   });
 
   it("uses official names (OD-01, OD-02)", () => {
@@ -37,8 +37,16 @@ describe("event inventory (master prompt §6 + decisions log)", () => {
     expect(names).not.toContain("Project Exhibition");
   });
 
-  it("has no AI & DS Technomedh event (D3)", () => {
-    expect(getEventsByVertical("technomedh").some((e) => e.department === "AI & DS")).toBe(false);
+  it("has exactly one AI & DS Technomedh event: Short Film Making (INV-01, replaces D3)", () => {
+    const aiDs = getEventsByVertical("technomedh").filter((e) => e.department === "AI & DS");
+    expect(aiDs.map((e) => [e.slug, e.name])).toEqual([["short-film-making", "Short Film Making"]]);
+    // Appended last: every earlier Technomedh event keeps its position (order and card art).
+    expect(getEventsByVertical("technomedh").at(-1)?.slug).toBe("short-film-making");
+  });
+
+  it("keeps the existing AI & DS Cultural event unchanged (Debate)", () => {
+    const debate = getEventsByVertical("cultural").filter((e) => e.department === "AI & DS");
+    expect(debate.map((e) => [e.slug, e.name])).toEqual([["debate", "Debate"]]);
   });
 
   it("has unique, URL-safe slugs", () => {

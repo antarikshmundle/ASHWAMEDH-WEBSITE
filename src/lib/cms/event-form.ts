@@ -200,11 +200,13 @@ function isPastOrToday(isoDate: string, today: Date): boolean {
 /**
  * Validates the form for one frozen event. `hasManagedFiles` is true when the event already has an
  * image or an uploaded file (Phase 10.4 fields), which also counts as content needing a source.
+ * `hasGuidelinesFile`: an uploaded guidelines PDF is attached, so a guidelines link cannot be added
+ * as well (the database allows one or the other).
  */
 export function validateEventForm(
   identity: EventIdentity,
   values: EventFormValues,
-  options: { hasManagedFiles?: boolean; today?: Date } = {},
+  options: { hasManagedFiles?: boolean; hasGuidelinesFile?: boolean; today?: Date } = {},
 ): EventFormResult {
   const errors: FieldErrors = {};
   const today = options.today ?? new Date();
@@ -246,6 +248,9 @@ export function validateEventForm(
     guidelinesUrl = guidelinesRaw.length <= LIMITS.url ? pdfHref(guidelinesRaw) : null;
     if (!guidelinesUrl)
       errors.guidelinesUrl = "Use an https:// link or a /docs/… path to the official PDF.";
+    else if (options.hasGuidelinesFile)
+      errors.guidelinesUrl =
+        "An uploaded guidelines PDF is attached. Remove it under “Event files” to use a link instead.";
   }
 
   const statusRaw = clean(values.registrationStatus) || "not-open";

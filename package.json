@@ -13,6 +13,7 @@
     "format:check": "prettier --check .",
     "admin:hash": "node scripts/admin-password-hash.mjs",
     "cms:seed": "tsx scripts/cms-seed.mts",
+    "cms:cleanup": "tsx scripts/cms-cleanup.mts",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:supabase": "vitest run --config vitest.supabase.config.mts",
@@ -23,7 +24,8 @@
     "lucide-react": "^1.52.0",
     "next": "16.3.8",
     "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "react-dom": "19.2.8",
+    "sharp": "0.35.5"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.8",

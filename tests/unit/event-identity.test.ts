@@ -27,6 +27,8 @@ const FROZEN: [slug: string, name: string, category: string, department: string 
   ["business-ideathon", "Business Ideathon", "technomedh", "Industrial IOT"],
   ["robo-craft", "Robo-Craft", "technomedh", "Robotics and AI"],
   ["brand-manthan", "Brand Manthan", "technomedh", "First Year"],
+  // INV-01 (owner correction, decisions-log): added after the original 40, last in Technomedh.
+  ["short-film-making", "Short Film Making", "technomedh", "AI & DS"],
   ["on-spot-painting", "On Spot Painting", "cultural", "Mechanical Engineering"],
   ["skit-competition", "Skit Competition", "cultural", "Aeronautical Engineering"],
   ["crafted-cuts", "Crafted Cuts", "cultural", "Chemical Engineering"],

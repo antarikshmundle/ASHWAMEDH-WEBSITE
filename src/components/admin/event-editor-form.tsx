@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState, type FormEvent } from "react";
+import { useActionState, useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { editorAction, type EditorState } from "@/app/admin/events/actions";
 import {
   Section,
@@ -15,7 +15,8 @@ import {
  * Event editor (Phase 10.3). Edits the official CONTENT of one frozen event; identity is shown
  * read-only by the page. Saves go through a Server Action that re-checks the admin session and
  * validates on the server. This component only improves the experience: unsaved-changes guard,
- * pending state, error summary, coordinator rows, version history.
+ * pending state, error summary, coordinator rows, version history. Since 10.4.5 it sits inside
+ * EventEditor, which shows the success notices and refreshes the page after a save or restore.
  */
 
 type Values = NonNullable<EditorState["values"]>;
@@ -36,8 +37,17 @@ interface Props {
   initialValues: Values;
   initialVersion: string;
   initialRevisions: Revision[];
-  managed: { image: boolean; guidelinesFile: boolean };
+  /** An uploaded guidelines PDF is attached (then no guidelines link can be added). */
+  hasGuidelinesFile: boolean;
   limits: EditorLimits;
+  /** Reports unsaved changes (media actions wait for them — D7). */
+  onDirtyChange?: (dirty: boolean) => void;
+  /** Called with every server response (from the action, so it survives a re-mount). */
+  onResult?: (state: EditorState) => void;
+  /** A file change or a page refresh is in progress: saving waits. */
+  locked?: boolean;
+  /** Rendered between the form and the version history (the event files). */
+  afterForm?: ReactNode;
 }
 
 const PARTICIPATION = [
@@ -89,12 +99,22 @@ const withIds = (rows: Coordinator[], nonce: number) =>
   rows.map((row, i) => ({ ...row, id: `${nonce}-${i}` }));
 
 export function EventEditorForm(props: Props) {
-  const [state, formAction, pending] = useActionState(editorAction.bind(null, props.slug), {
-    status: "idle",
-    version: props.initialVersion,
-    nonce: 0,
-    values: props.initialValues,
-  } satisfies EditorState);
+  const { onDirtyChange, onResult } = props;
+  // The result is reported from the action itself, not from an effect: a successful save also
+  // refreshes the page data, which re-creates this form (keyed by version) before effects run.
+  const [state, formAction, pending] = useActionState(
+    async (previous: EditorState, data: FormData) => {
+      const next = await editorAction(props.slug, previous, data);
+      onResult?.(next);
+      return next;
+    },
+    {
+      status: "idle",
+      version: props.initialVersion,
+      nonce: 0,
+      values: props.initialValues,
+    } satisfies EditorState,
+  );
 
   const values = state.values ?? props.initialValues;
   const errors = state.errors ?? {};
@@ -111,6 +131,8 @@ export function EventEditorForm(props: Props) {
     setRows(withIds(values.coordinators, state.nonce));
     if (state.status === "saved" || state.status === "restored") setDirty(false);
   }
+
+  useEffect(() => onDirtyChange?.(dirty), [dirty, onDirtyChange]);
 
   // Unsaved changes: ask before leaving the page.
   useEffect(() => {
@@ -152,7 +174,7 @@ export function EventEditorForm(props: Props) {
   return (
     <div>
       <div aria-live="polite" className="mt-6 empty:hidden">
-        <StatusMessage status={state.status} publicHref={props.publicHref} />
+        <StatusMessage status={state.status} />
       </div>
 
       {errorKeys.length > 0 && (
@@ -313,26 +335,17 @@ export function EventEditorForm(props: Props) {
             label="Guidelines PDF link"
             maxLength={props.limits.url}
             placeholder="https://… or /docs/…"
-            hint="An https:// link or a /docs/… path to the official PDF. Uploading files arrives with the file manager."
+            hint={
+              props.hasGuidelinesFile
+                ? "An uploaded guidelines PDF is attached (see “Event files” below). Remove it there to use a link instead."
+                : "An https:// link or a /docs/… path to the official PDF — or upload the PDF under “Event files” below."
+            }
             defaultValue={values.guidelinesUrl}
             error={err("guidelinesUrl")}
           />
-          <dl className="grid gap-3 type-body-sm sm:grid-cols-2">
-            <div className="rounded-md border border-line-subtle px-3 py-2">
-              <dt className="type-meta text-fg-muted">Uploaded guidelines file</dt>
-              <dd className="text-fg">
-                {props.managed.guidelinesFile ? "Attached (file manager)" : "None"}
-              </dd>
-            </div>
-            <div className="rounded-md border border-line-subtle px-3 py-2">
-              <dt className="type-meta text-fg-muted">Event image</dt>
-              <dd className="text-fg">
-                {props.managed.image
-                  ? "Set (file manager)"
-                  : "None — the site shows abstract artwork"}
-              </dd>
-            </div>
-          </dl>
+          <p className="type-body-sm text-fg-muted">
+            The event image and the guidelines PDF file are managed under “Event files” below.
+          </p>
         </Section>
 
         <Section
@@ -481,7 +494,7 @@ export function EventEditorForm(props: Props) {
         <div className="sticky bottom-0 mt-8 flex flex-wrap items-center gap-4 border-t border-line-subtle bg-base/95 py-4">
           <button
             type="submit"
-            disabled={pending || !dirty}
+            disabled={pending || !dirty || props.locked}
             className="h-12 rounded-md bg-accent-strong px-6 type-button text-on-accent hover:bg-accent disabled:cursor-not-allowed disabled:opacity-60"
           >
             {pending ? "Saving…" : "Save changes"}
@@ -491,6 +504,8 @@ export function EventEditorForm(props: Props) {
           </span>
         </div>
       </form>
+
+      {props.afterForm}
 
       <section aria-labelledby="history-title" className="mt-12">
         <h2 id="history-title" className="type-title text-fg">
@@ -525,7 +540,7 @@ export function EventEditorForm(props: Props) {
                   <input type="hidden" name="revisionId" value={revision.id} />
                   <button
                     type="submit"
-                    disabled={pending}
+                    disabled={pending || props.locked}
                     className="h-11 rounded-md border border-line-control px-3 type-meta text-fg hover:border-accent/55 disabled:opacity-50"
                   >
                     Restore<span className="sr-only"> the version saved {revision.savedLabel}</span>
@@ -540,31 +555,10 @@ export function EventEditorForm(props: Props) {
   );
 }
 
-function StatusMessage({
-  status,
-  publicHref,
-}: {
-  status: EditorState["status"];
-  publicHref: string;
-}) {
+/** Problems only: success notices are shown by EventEditor (they survive its refresh). */
+function StatusMessage({ status }: { status: EditorState["status"] }) {
   const box = "rounded-md border px-4 py-3 type-body-sm";
   switch (status) {
-    case "saved":
-    case "restored":
-      return (
-        <p role="status" className={`${box} border-line bg-surface text-fg`}>
-          {status === "saved" ? "Saved." : "Earlier version restored and saved."} The public event
-          page shows it on its next visit.{" "}
-          <a
-            href={publicHref}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline underline-offset-4"
-          >
-            View public page<span className="sr-only"> (opens in new tab)</span>
-          </a>
-        </p>
-      );
     case "conflict":
       return (
         <p role="alert" className={`${box} border-accent bg-surface-2 text-fg`}>

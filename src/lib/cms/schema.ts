@@ -8,6 +8,7 @@ export const CMS_TABLES = {
   events: "events_content",
   coordinators: "event_coordinators",
   files: "cms_files",
+  tickets: "cms_upload_tickets",
 } as const;
 
 export const BUCKETS = {
@@ -15,6 +16,9 @@ export const BUCKETS = {
   images: "ashwamedh-images",
 } as const;
 export type Bucket = (typeof BUCKETS)[keyof typeof BUCKETS];
+
+/** Private bucket for signed direct uploads awaiting validation (Phase 10.4); never in cms_files. */
+export const STAGING_BUCKET = "ashwamedh-staging";
 
 export type FileCategory = "document" | "event-image" | "gallery-image" | "team-image" | "logo";
 
@@ -62,6 +66,29 @@ export interface FileRow {
   size_bytes: number;
   category: FileCategory;
   alt_text: string | null;
+  /** Images only (Phase 10.4, D6); NULL for documents. */
+  width?: number | null;
+  height?: number | null;
+}
+
+export type TicketStatus = "issued" | "processing" | "finalized" | "failed";
+
+/** cms_upload_tickets — one signed direct upload (Phase 10.4, D1). */
+export interface UploadTicketRow {
+  id: string;
+  event_slug: string;
+  kind: "image" | "guidelines";
+  object_path: string;
+  original_name: string;
+  declared_type: string;
+  declared_size: number;
+  status: TicketStatus;
+  issued_at: string;
+  expires_at: string;
+  processing_at: string | null;
+  finished_at: string | null;
+  file_id: string | null;
+  failure: string | null;
 }
 
 /** The columns of a file that the public site needs. */

@@ -2,17 +2,28 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CmsUnavailable, PublishingNotice } from "@/components/admin/cms-notices";
-import { EventEditorForm } from "@/components/admin/event-editor-form";
+import { EventEditor } from "@/components/admin/event-editor";
 import { getVertical } from "@/data/verticals";
 import { requireAdmin } from "@/lib/admin/auth";
 import {
   getEventForEdit,
   inventoryEvent,
   listRevisions,
+  mediaSummary,
   type EventForEdit,
   type RevisionSummary,
 } from "@/lib/cms/admin-events";
+import { requireSupabaseCredentials } from "@/lib/cms/config";
 import { LIMITS, recordToFormValues } from "@/lib/cms/event-form";
+import { FILE_RULES } from "@/lib/cms/upload-policy";
+
+const MEDIA_LIMITS = {
+  image: {
+    maxBytes: FILE_RULES["event-image"].maxBytes,
+    types: [...FILE_RULES["event-image"].types],
+  },
+  guidelines: { maxBytes: FILE_RULES.document.maxBytes, types: [...FILE_RULES.document.types] },
+};
 
 export async function generateMetadata({
   params,
@@ -21,7 +32,10 @@ export async function generateMetadata({
   return { title: inventoryEvent(slug)?.name ?? "Event" };
 }
 
-/** Event editor (Phase 10.3). Identity is read-only; only official content is editable. */
+/**
+ * Event editor (Phase 10.3; event files since 10.4.5). Identity is read-only; only official
+ * content is editable.
+ */
 export default async function EditEventPage({ params }: PageProps<"/admin/events/[slug]">) {
   await requireAdmin();
   const { slug } = await params;
@@ -82,16 +96,14 @@ export default async function EditEventPage({ params }: PageProps<"/admin/events
         </p>
       )}
       {record && (
-        <EventEditorForm
+        <EventEditor
           slug={slug}
           publicHref={`/events/${slug}`}
-          initialValues={recordToFormValues(record)}
-          initialVersion={record.updated_at}
-          initialRevisions={revisions}
-          managed={{
-            image: Boolean(record.image_file_id || record.image_path),
-            guidelinesFile: Boolean(record.guidelines_file_id),
-          }}
+          values={recordToFormValues(record)}
+          version={record.updated_at}
+          revisions={revisions}
+          media={mediaSummary(record, requireSupabaseCredentials().url)}
+          mediaLimits={MEDIA_LIMITS}
           limits={LIMITS}
         />
       )}

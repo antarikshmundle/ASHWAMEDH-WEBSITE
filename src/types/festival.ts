@@ -74,8 +74,10 @@ export interface EventDetailsInput {
   source: ContentSource;
   /** About tab, one string per paragraph. */
   description?: readonly string[];
-  /** Path under /images/events/ (src/lib/media.ts). */
+  /** Path under /images/events/, or an uploaded image's Storage URL (src/lib/media.ts). */
   image?: string;
+  /** Official alt text for that image (admin-entered); omitted = decorative (alt=""). */
+  imageAlt?: string;
   rules?: readonly string[];
   /** Eligibility tab, one string per paragraph. */
   eligibility?: readonly string[];
@@ -105,6 +107,8 @@ export interface EventDetailsInput {
 export interface EventRecord extends Omit<EventIdentity, "legacySlugs"> {
   description: string[] | null;
   image: string | null;
+  /** Alt text of the image; `null` when there is none (the image is decorative). */
+  imageAlt: string | null;
   rules: string[] | null;
   eligibility: string[] | null;
   participation: Participation | null;

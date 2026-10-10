@@ -108,7 +108,7 @@ describe("CMS migrations (PostgreSQL)", () => {
     expect(columns.some((c) => c.includes("prize"))).toBe(false);
   });
 
-  it("creates the two public buckets with type and size limits", async () => {
+  it("creates the two public buckets (and, since 10.4, a private staging bucket)", async () => {
     const { rows } = await db.query("select * from storage.buckets order by id");
     expect(rows).toEqual([
       {
@@ -125,15 +125,22 @@ describe("CMS migrations (PostgreSQL)", () => {
         file_size_limit: 5242880,
         allowed_mime_types: ["image/jpeg", "image/png", "image/webp"],
       },
+      {
+        id: "ashwamedh-staging",
+        name: "ashwamedh-staging",
+        public: false,
+        file_size_limit: 10485760,
+        allowed_mime_types: ["application/pdf", "image/jpeg", "image/png", "image/webp"],
+      },
     ]);
   });
 });
 
 describe("CMS seed (PostgreSQL)", () => {
-  it("seeds exactly 40 rows, all NULL / not-open while the repository has no details", async () => {
+  it("seeds exactly 41 rows, all NULL / not-open while the repository has no details", async () => {
     const first = await runSeed(pgliteStore(db));
-    expect(first.inserted).toHaveLength(40);
-    expect(first.totalRows).toBe(40);
+    expect(first.inserted).toHaveLength(41);
+    expect(first.totalRows).toBe(41);
     const { rows } = await db.query<Record<string, unknown>>(
       "select * from public.events_content order by event_slug",
     );
@@ -146,12 +153,12 @@ describe("CMS seed (PostgreSQL)", () => {
     }
   });
 
-  it("is idempotent: a second run inserts nothing and keeps 40 rows", async () => {
+  it("is idempotent: a second run inserts nothing and keeps 41 rows", async () => {
     const second = await runSeed(pgliteStore(db));
     expect(second).toMatchObject({
       inserted: [],
-      alreadyPresent: 40,
-      totalRows: 40,
+      alreadyPresent: 41,
+      totalRows: 41,
       unknownSlugs: [],
     });
   });
@@ -191,7 +198,7 @@ describe("CMS seed (PostgreSQL)", () => {
     );
     expect(rebuilt).toEqual(events);
     expect(Object.keys(eventDetails)).toHaveLength(0);
-    expect(buildSeedPlan()).toHaveLength(40);
+    expect(buildSeedPlan()).toHaveLength(41);
   });
 });
 
@@ -278,11 +285,12 @@ describe("CMS constraints (PostgreSQL)", () => {
     expect(await set("guidelines_url", "https://example.org/rules.pdf")).toMatch(
       /events_content_one_guidelines/,
     );
-    await db.query("delete from public.cms_files where id = $1", [FILE_ID]);
-    const { rows } = await db.query<{ guidelines_file_id: string | null }>(
-      "select guidelines_file_id from public.events_content where event_slug = 'debate'",
+    // Since Phase 10.4 a file in use cannot be deleted (ON DELETE RESTRICT); unlink first.
+    expect(await rejects("delete from public.cms_files where id = $1", [FILE_ID])).toMatch(
+      /foreign key/,
     );
-    expect(rows[0]!.guidelines_file_id).toBeNull();
+    await set("guidelines_file_id", null);
+    expect(await rejects("delete from public.cms_files where id = $1", [FILE_ID])).toBe("");
   });
 });
 

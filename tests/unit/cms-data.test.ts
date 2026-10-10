@@ -77,7 +77,10 @@ describe("rows ⇄ domain (NULL / TBA contract, provenance)", () => {
         source_kind: "official-pdf",
         source_reference: "IT_Hackathon_2026.pdf",
         source_date: "2026-11-02",
-        guidelines_file: { bucket: "ashwamedh-documents", path: "events/hackathon/x.pdf" },
+        guidelines_file: {
+          bucket: "ashwamedh-documents",
+          path: "events/hackathon/0b9f5d4e-8c5a-4f6e-9a1b-2c3d4e5f6a7b.pdf",
+        },
         event_coordinators: [
           { name: "B", designation: null, phone: null, email: null, sort_order: 1 },
           {
@@ -95,7 +98,7 @@ describe("rows ⇄ domain (NULL / TBA contract, provenance)", () => {
       source: { kind: "official-pdf", reference: "IT_Hackathon_2026.pdf", date: "2026-11-02" },
       venue: "Main Auditorium",
       status: "open",
-      pdf: `${URL_}/storage/v1/object/public/ashwamedh-documents/events/hackathon/x.pdf`,
+      pdf: `${URL_}/storage/v1/object/public/ashwamedh-documents/events/hackathon/0b9f5d4e-8c5a-4f6e-9a1b-2c3d4e5f6a7b.pdf`,
     });
     expect(details?.coordinators?.map((c) => c.name)).toEqual(["A", "B"]);
     expect(details?.teamSize).toBeUndefined();
@@ -239,7 +242,14 @@ describe("CMS secret safety", async () => {
   });
 
   it("marks every module that holds the service-role client as server-only", () => {
-    for (const name of ["server.ts", "events.ts", "files.ts", "revalidate.ts", "admin-events.ts"])
+    for (const name of [
+      "server.ts",
+      "events.ts",
+      "media-admin.ts",
+      "image-decode.ts",
+      "revalidate.ts",
+      "admin-events.ts",
+    ])
       expect(readFileSync(join(SRC, "lib", "cms", name), "utf8"), name).toMatch(
         /^import "server-only";/,
       );

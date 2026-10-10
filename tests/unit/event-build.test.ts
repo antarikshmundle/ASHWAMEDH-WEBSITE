@@ -41,7 +41,7 @@ describe("event details registry", () => {
 
   it("is empty until official content exists — every event keeps null details", () => {
     expect(Object.keys(eventDetails)).toHaveLength(0);
-    expect(events).toHaveLength(40);
+    expect(events).toHaveLength(41);
     for (const record of events) {
       for (const field of DETAIL_FIELDS)
         expect(record[field], `${record.slug}.${field}`).toBeNull();

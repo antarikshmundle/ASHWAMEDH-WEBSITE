@@ -90,8 +90,8 @@ describe("event detail and card rendering (Phase 6.3)", () => {
     expect(chip(detail, "Team Size")).toBe("1");
   });
 
-  it("resolves and renders all 40 events by slug", () => {
-    expect(events).toHaveLength(40);
+  it("resolves and renders all 41 events by slug", () => {
+    expect(events).toHaveLength(41);
     for (const { slug, name } of eventInventory) {
       const event = getEventBySlug(slug);
       expect(event?.name, slug).toBe(name);

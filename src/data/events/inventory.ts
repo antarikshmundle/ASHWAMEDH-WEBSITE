@@ -1,8 +1,9 @@
 import type { EventIdentity } from "@/types/festival";
 
 /**
- * Frozen event inventory — the only source of events (master prompt §6; names per OD-01/OD-02).
- * 14 Technomedh · 15 Cultural · 10 Sports, in this order (it drives listing order and card art).
+ * Frozen event inventory — the only source of events (master prompt §6; names per OD-01/OD-02;
+ * "Short Film Making" (AI & DS) added by the owner's inventory correction INV-01, decisions-log).
+ * 15 Technomedh · 15 Cultural · 11 Sports, in this order (it drives listing order and card art).
  *
  * Slugs are explicit and permanent: each equals the slug rule applied to the official name
  * (docs/ux/sitemap-and-routes.md §3), frozen so a name change can never silently change a URL.
@@ -88,6 +89,13 @@ export const eventInventory = [
     name: "Brand Manthan",
     category: "technomedh",
     department: "First Year",
+  },
+  // INV-01 (owner correction): appended last, so no existing event's order or card art changes.
+  {
+    slug: "short-film-making",
+    name: "Short Film Making",
+    category: "technomedh",
+    department: "AI & DS",
   },
   {
     slug: "on-spot-painting",

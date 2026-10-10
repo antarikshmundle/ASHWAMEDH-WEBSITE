@@ -3,6 +3,15 @@
 Clarifications and corrections from the project owner. These take precedence over
 [master-prompt-v1.md](./master-prompt-v1.md) where they conflict. Newest first.
 
+## 2026-10-10 — Inventory correction (AI & DS)
+
+Owner correction. It takes precedence over master prompt §6 and replaces D3 below.
+
+| #      | Decision                                                                                                                                                                                                                                               |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| INV-01 | Technomedh adds **Short Film Making** (`short-film-making`, department AI & DS), last in the Technomedh order — 15 Technomedh, 15 Cultural, 11 Sports, 41 in total. No details are entered for it: everything TBA, registration "not-open", no source. |
+| INV-02 | The AI & DS Cultural event stays **Debate** (`debate`), unchanged — the owner confirmed it is the "Debate Competition" referred to; no second event is added.                                                                                          |
+
 ## 2026-10-08 — Phase 7.6 (Official content / registration workflow correction)
 
 Owner corrections after the Phase 7 checkpoint (8714fb1). They take precedence over master prompt §6 and
@@ -152,7 +161,7 @@ destinations.
 | --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | D1  | The locked UI/UX reference image is the visual source of truth. It must be stored at `docs/ux/reference/` so it is available to every contributor and tool. **Status: not yet in the repository.**                |
 | D2  | No generic or invented event descriptions. Until official information arrives, `description` and every other unavailable field stays `null` and renders as an appropriate TBA / Coming Soon state.                |
-| D3  | No AI & DS Technomedh event. The provided event inventory is the source of truth; an official update may add one later.                                                                                           |
+| D3  | ~~No AI & DS Technomedh event.~~ **Superseded by INV-01 (2026-10-10):** the official update added Short Film Making (AI & DS).                                                                                    |
 | D4  | Event dates are not finalized, so nothing is labelled "Upcoming". Use "Featured Events" only if needed, with currently known official event names only. Schedule shows "Schedule Releasing Soon".                 |
 | D5  | No stock photography presented as real Ashwamedh events. Until official imagery arrives, only intentional abstract/graphic placeholders are used.                                                                 |
 | D6  | `NEXT_PUBLIC_SITE_URL` stays configurable; hosting and domain are not decided.                                                                                                                                    |

@@ -16,12 +16,14 @@ import {
   type EventFormValues,
   type FieldErrors,
 } from "@/lib/cms/event-form";
+import { restoreEventRevision, type MissingMedia } from "@/lib/cms/media-admin";
 import { expireEventContent } from "@/lib/cms/revalidate";
 
 /**
  * Event editor Server Actions (Phase 10.3). Next.js rejects cross-origin calls; each action
  * re-checks the admin session, re-validates the slug against the frozen inventory, validates the
  * content on the server, saves atomically, and only then refreshes that event's public pages.
+ * Since 10.4 a restore goes through cms_restore_event, which also restores media links (D5).
  */
 
 export interface EditorState {
@@ -34,15 +36,19 @@ export interface EditorState {
   errors?: FieldErrors;
   /** Fresh history after a successful save or restore. */
   revisions?: RevisionSummary[];
+  /** After a restore: media the revision linked that no longer exists (left empty). */
+  missingMedia?: MissingMedia;
 }
 
 type Result = Omit<EditorState, "nonce">;
+
+type Mode = { kind: "save" } | { kind: "restore"; revisionId: string; hasManagedFiles: boolean };
 
 async function save(
   slug: string,
   version: string,
   values: EventFormValues,
-  status: "saved" | "restored",
+  mode: Mode,
 ): Promise<Result> {
   const identity = inventoryEvent(slug);
   if (!identity) return { status: "missing", version };
@@ -56,12 +62,34 @@ async function save(
   }
   if (!current?.record) return { status: "missing", version, values };
 
-  const checked = validateEventForm(identity, values, { hasManagedFiles: current.hasManagedFiles });
+  // A restored revision brings its own media links back, so its files decide the source rule.
+  const hasManagedFiles = mode.kind === "restore" ? mode.hasManagedFiles : current.hasManagedFiles;
+  const checked = validateEventForm(identity, values, {
+    hasManagedFiles,
+    // A restore brings its own (consistent) pair of guidelines link and file.
+    hasGuidelinesFile: mode.kind === "save" && Boolean(current.record.guidelines_file_id),
+  });
   if (!checked.ok) return { status: "invalid", version, values, errors: checked.errors };
 
   let outcome;
+  let missingMedia: MissingMedia | undefined;
   try {
-    outcome = await saveEventContent(slug, version, checked.content, checked.coordinators);
+    if (mode.kind === "save") {
+      outcome = await saveEventContent(slug, version, checked.content, checked.coordinators);
+    } else {
+      const restored = await restoreEventRevision(slug, version, mode.revisionId);
+      if (!restored.ok && restored.reason === "invalid") {
+        return { status: "invalid", version, errors: { form: "That version no longer exists." } };
+      }
+      const map = { conflict: "conflict", missing: "missing" } as const;
+      outcome = restored.ok
+        ? ({ ok: true, version: restored.version } as const)
+        : ({
+            ok: false,
+            reason: restored.reason in map ? map[restored.reason as keyof typeof map] : "failed",
+          } as const);
+      if (restored.ok && restored.missing.length) missingMedia = restored.missing;
+    }
   } catch (error) {
     console.error(`[cms] saving "${slug}" failed: ${(error as Error).message}`);
     return { status: "error", version, values };
@@ -80,7 +108,7 @@ async function save(
   }
   // Re-display what was actually stored (normalised), based on the new version.
   return {
-    status,
+    status: mode.kind === "save" ? "saved" : "restored",
     version: outcome.version,
     values: recordToFormValues({
       ...current.record,
@@ -88,6 +116,7 @@ async function save(
       event_coordinators: checked.coordinators,
     }),
     revisions,
+    ...(missingMedia ? { missingMedia } : {}),
   };
 }
 
@@ -103,7 +132,7 @@ export async function saveEventAction(
 ): Promise<EditorState> {
   await requireAdmin();
   const version = String(formData.get("version") ?? "");
-  return respond(previous, await save(slug, version, parseEventForm(formData), "saved"));
+  return respond(previous, await save(slug, version, parseEventForm(formData), { kind: "save" }));
 }
 
 export async function restoreRevisionAction(
@@ -128,7 +157,17 @@ export async function restoreRevisionAction(
       errors: { form: "That version no longer exists." },
     });
   }
-  return respond(previous, await save(slug, version, recordToFormValues(revision), "restored"));
+  const hasManagedFiles = Boolean(
+    revision.image_file_id || revision.image_path || revision.guidelines_file_id,
+  );
+  return respond(
+    previous,
+    await save(slug, version, recordToFormValues(revision), {
+      kind: "restore",
+      revisionId,
+      hasManagedFiles,
+    }),
+  );
 }
 
 /** Single entry point for the editor form: `intent` = "save" (default) or "restore". */

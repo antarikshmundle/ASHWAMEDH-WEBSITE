@@ -29,18 +29,20 @@ describe("contactHref", () => {
 
 describe("eventImageSrc", () => {
   it("falls back (null) when there is no image", () => {
-    expect(eventImageSrc(null)).toBeNull();
-    expect(eventImageSrc(" ")).toBeNull();
+    expect(eventImageSrc(null, "hackathon")).toBeNull();
+    expect(eventImageSrc(" ", "hackathon")).toBeNull();
   });
 
   it("accepts official images in /images/events/", () => {
-    expect(eventImageSrc("/images/events/hackathon.webp")).toBe("/images/events/hackathon.webp");
+    expect(eventImageSrc("/images/events/hackathon.webp", "hackathon")).toBe(
+      "/images/events/hackathon.webp",
+    );
   });
 
   it("rejects paths the image optimizer is not configured for", () => {
-    expect(eventImageSrc("https://example.org/a.jpg")).toBeNull();
-    expect(eventImageSrc("/logos/pce-logo.png")).toBeNull();
-    expect(eventImageSrc("/images/events/a.jpg?v=2")).toBeNull();
-    expect(eventImageSrc("/images/events/../../secret.png")).toBeNull();
+    expect(eventImageSrc("https://example.org/a.jpg", "hackathon")).toBeNull();
+    expect(eventImageSrc("/logos/pce-logo.png", "hackathon")).toBeNull();
+    expect(eventImageSrc("/images/events/a.jpg?v=2", "hackathon")).toBeNull();
+    expect(eventImageSrc("/images/events/../../secret.png", "hackathon")).toBeNull();
   });
 });

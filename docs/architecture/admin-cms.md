@@ -63,11 +63,18 @@ Public visitor ──► static pages ◄── data layer ── buildEvent() /
 
 ### Setting up the administrator
 
-1. `npm run admin:hash` — type the password (12–256 characters; not echoed). Copy the printed hash.
-2. Generate a session secret, e.g. `openssl rand -base64 48`.
-3. Set `ADMIN_USERNAME`, `ADMIN_PASSWORD_HASH`, `ADMIN_SESSION_SECRET` in `.env.local` (local) or the
-   host's environment settings (production). Never commit them.
-4. To change the password, replace the hash; to sign everyone out, rotate the secret.
+1. `npm run admin:hash` — type the password (12–256 characters; not echoed). Copy the printed hash
+   (`scrypt:…`, colon-separated; paste it unquoted and unchanged).
+2. Generate a session secret (≥ 32 characters), e.g. `openssl rand -base64 48`, or without OpenSSL:
+   `node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"`.
+3. Set `ADMIN_USERNAME` (1–64 characters), `ADMIN_PASSWORD_HASH`, `ADMIN_SESSION_SECRET` in `.env.local` or
+   `.env` (local; both are git-ignored, `.env.local` wins) or the host's environment settings (production).
+   Never commit them. Each name once: a later line with the same name — even an empty one — replaces the
+   earlier value.
+4. Restart the server (`npm run dev`, or `npm run build` then `npm run start`): environment files are read
+   at start-up. The login page says "Admin sign-in is not configured on this server." until all three
+   values are present and valid.
+5. To change the password, replace the hash; to sign everyone out, rotate the secret.
 
 ## 10.2 — Database and storage (implemented)
 
@@ -141,21 +148,32 @@ server can read or write.
   kept only as metadata.
 - `src/lib/cms/upload-policy.ts` checks every upload before Storage: the real type from the file's first
   bytes (PDF, PNG, JPEG, WebP only — SVG, HTML, scripts, executables and archives are rejected), the
-  claimed type and the extension must match it, size limits, a safe file name. `src/lib/cms/files.ts`
-  (server-only) uploads and deletes after `requireAdmin()` and is not exposed as a route; the file manager
-  arrives in 10.4.
-- Event images from Storage are not displayed yet: `src/lib/media.ts` and `next.config.ts` still allow
-  only `/images/events/`. 10.4 adds the Storage host to both, together with the image manager.
+  claimed type and the extension must match it, size limits, a safe file name. Uploads go through the
+  media service (`src/lib/cms/media-admin.ts`, 10.4) and deletions only through the cleanup
+  (`src/lib/cms/cleanup.ts`, 10.4.6); the 10.2 helper `files.ts` was removed in 10.4.6.
+- Uploaded event images are displayed since 10.4.4 (see below): `src/lib/media.ts` and `next.config.ts`
+  allow exactly the project's Storage host and public event-image folder.
 
 ### Security boundaries
 
-- Service-role key: server environment only; used by `src/lib/cms/server.ts`, `events.ts`, `files.ts`,
-  `revalidate.ts` (all `server-only`) and the seed script. Unit tests fail if a client component imports
+- Service-role key: server environment only; used by `src/lib/cms/server.ts`, `events.ts`,
+  `media-admin.ts`, `image-decode.ts`, `revalidate.ts`, `admin-events.ts` (all `server-only`), and by the
+  seed and cleanup scripts. Unit tests fail if a client component imports
   the CMS or Supabase, or if a `NEXT_PUBLIC_SUPABASE…` variable appears.
-- Every CMS mutation (`uploadCmsFile`, `deleteCmsFile`, `expireEventContent`) calls `requireAdmin()`
-  first. There is no public API route for the CMS.
+- Every CMS mutation (event save / restore, media actions, cleanup, `expireEventContent`) calls
+  `requireAdmin()` first. There is no public API route for the CMS.
 - The database repeats the validation (constraints, RLS), so a bug in the app cannot store an unsafe
   registration link or file type.
+
+### Inventory corrections (owner-approved only)
+
+Identity is never created in the CMS. An official inventory change (e.g. INV-01, decisions log) is made in
+`src/data/events/inventory.ts` (appended at the end of its vertical so no other event's order or card art
+changes), with the identity snapshot and count tests updated in the same change. The database then needs
+one content row for the new slug: `npm run cms:seed` inserts rows **only for slugs that have none** — all
+NULL / "not-open", no source — and never overwrites or deletes existing rows. No migration is needed (the
+schema does not list slugs). Until the seed runs, the public site still shows the new event (all TBA,
+from the repository) and its admin editor asks for the seed.
 
 ### Commands
 
@@ -179,6 +197,13 @@ server can read or write.
 2. Apply the migrations with `npx supabase db push` — never from the running app.
 3. Set `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `CMS_CONTENT_SOURCE=database` and the admin variables
    in the host's server environment.
+   - **`SUPABASE_URL` must also be available at build time** (`next build`): `next.config.ts` derives the
+     image optimizer's `remotePatterns` from it, and the built configuration is what the server uses.
+     Built without it, uploaded event images are not rendered (the abstract art shows) or, if the runtime
+     has it, the optimizer refuses them with HTTP 400. It must be the plain `https://<project>.supabase.co`
+     origin — an `http://` (local) URL is not accepted for images.
+   - After a deployment, check `.next/images-manifest.json` (or the host's build output) lists exactly one
+     remote pattern: that host and `/storage/v1/object/public/ashwamedh-images/events/**`.
 4. Run `npm run cms:seed` once (from a trusted machine or CI), then deploy.
 5. Later schema changes are new migration files, reviewed and applied the same way.
 
@@ -195,7 +220,7 @@ server can read or write.
 
 | Route                  | What it does                                                                                                                                 |
 | ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| `/admin/events`        | The 40 frozen events by vertical: content entered or all TBA, registration status, last update (IST).                                        |
+| `/admin/events`        | The 41 frozen events by vertical: content entered or all TBA, registration status, last update (IST).                                        |
 | `/admin/events/[slug]` | Editor for one event. Identity (name, vertical, department, slug) is shown read-only. Unknown slugs 404; there is no way to create an event. |
 
 Both call `requireAdmin()`; the proxy also redirects signed-out requests. A notice says when the public site
@@ -230,7 +255,8 @@ editor form (client, useActionState) → editorAction (Server Action; intent sav
   the edits stay in the form); database failure ("nothing was changed"); not seeded. An "Unsaved changes"
   indicator and a leave-page warning guard unsaved edits.
 - **Revisions:** every save keeps the previous version; the editor lists the latest 20 and can restore one
-  (after a confirmation). A restore is validated and saved like an edit, so it is itself undoable.
+  (after a confirmation). A restore is validated like an edit and is itself undoable. Since 10.4 it runs
+  through `cms_restore_event`, which also restores media links (see 10.4).
 
 ### Event pages refresh after a save (proxy guard)
 
@@ -242,6 +268,196 @@ every unknown URL would be rendered and cached on disk, and on case-insensitive 
 as `/events/Hackathon` would overwrite the real page's cache entry. Verified: after a save, the next visit
 to that event (and its listing) shows the new content; other event pages stay cached; unknown URLs return
 404 and add nothing to the route cache.
+
+## 10.4 — Event media (10.4.1–10.4.6 implemented)
+
+Guidelines PDFs and event images, uploaded by the admin. Decisions D1–D8 are in the 10.4 audit; the
+the cleanup (10.4.6) is described below.
+
+### Database (`…_cms_media.sql`, `…_cms_trigger_function_grants.sql`)
+
+- Private bucket `ashwamedh-staging` (10 MB; PDF, JPEG, PNG, WebP), no storage policies.
+- `cms_files.width` / `height` (images: both required, each ≤ 4096, product ≤ 16,000,000 — D6) and
+  `detached_at` (when a file stopped being used; the cleanup grace counts from it).
+- The event → file foreign keys are `ON DELETE RESTRICT`: a file in use cannot be deleted.
+- `cms_upload_tickets`: one row per upload, bound to the event, the kind and a server-generated
+  `events/<slug>/<uuid>.<ext>` path; valid 15 minutes (at most one hour); `issued → processing →
+finalized | failed`; a processing claim older than 10 minutes may be taken over.
+- RPCs (service role only): `cms_set_event_media` (attach / remove, versioned, with a revision; attaching
+  replaces an `image_path` / `guidelines_url`, which stays in the revision — D2), `cms_finalize_upload`
+  (file row + link + ticket in one transaction; a repeat returns the same file) and `cms_restore_event`
+  (D5: restores links whose file still exists and reports the others as missing).
+- The two trigger functions are no longer executable through `PUBLIC` (security fix); triggers still fire.
+
+### Upload flow (server: `src/lib/cms/media-admin.ts`, actions: `src/app/admin/events/media-actions.ts`)
+
+```
+requestMediaUploadAction → requireAdmin → slug ∈ inventory → checkUploadRequest (kind, name, type, size)
+  → event has a source (D3) and the editor's version → ticket row → signed upload URL (staging, no upsert)
+browser → PUT the file to the signed URL (10.4.5)
+finalizeMediaUploadAction → requireAdmin → claim the ticket (event + kind + unexpired, one winner)
+  → download the staging object → size = requested size → validateUpload (type from bytes, extension,
+    limits, image structure, D6) → full decode (images) → upload THESE bytes to the public bucket, same
+    path, our content type → rpc cms_finalize_upload (version check, revision) → remove the staging copy
+  → expireEventContent(slug)
+```
+
+- **Remove:** `cms_set_event_media(…, NULL)` — versioned, with a revision; the file is only detached.
+- **Alt text:** for the event's current image only; trimmed, ≤ 300 characters, blank = none (decorative).
+- **Nothing from the browser chooses a bucket, a path or a file id.** The signed upload URL is a secret for
+  the signed-in admin's browser only; it is never logged or stored. Supabase signs upload URLs for two
+  hours (not configurable); after the 15-minute ticket the server no longer accepts the upload, and the
+  token can only write that one staging path (no overwrite), which the cleanup removes.
+
+### Image verification
+
+1. Header parser (`image-dimensions.ts`, pure): walks the whole PNG / JPEG / WebP structure; rejects
+   damaged, truncated, animated, unsupported (lossless / arithmetic / 12-bit JPEG …) files and data after
+   the image (polyglots); dimensions come from the bytes, never from the browser.
+2. D6 limits (`upload-policy.ts`): each side ≤ 4096 and ≤ 16,000,000 pixels.
+3. Full decode (`image-decode.ts`, sharp / libvips — installed by Next.js for its image optimizer):
+   `limitInputPixels` 16,000,000, ≤ 4 channels, first frame only, `failOn: "warning"`, a 15-second
+   timeout; `stats()` reads every pixel without keeping an output image. Format and dimensions must equal
+   the parser's. If sharp cannot be loaded, images are refused (fails closed).
+
+Limits: decoding proves the data decodes, not that it is the intended picture — some damage inside a
+JPEG or lossy WebP scan decodes to wrong pixels without an error. Strict `failOn: "warning"` may refuse
+unusual but viewable files (re-exporting fixes them). EXIF orientation is not applied; public rendering
+must handle it (10.4.4).
+
+### Failures and recovery (Storage and the database are not atomic)
+
+| Failure                                       | Result                                                                                                                       |
+| --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| Signed URL cannot be created                  | Ticket closed as failed                                                                                                      |
+| Upload never arrives / Storage read fails     | Claim given back (`issued`); the admin can retry                                                                             |
+| Bytes rejected                                | Ticket failed, staging copy removed; nothing public written                                                                  |
+| Public write fails                            | Claim given back; staging copy kept for the retry                                                                            |
+| RPC fails with a database error (rolled back) | Public copy removed, ticket failed, staging removed                                                                          |
+| RPC outcome unknown (network)                 | Nothing deleted; if the ticket turns out finalized it is a success, otherwise it stays `processing` (retry after 10 minutes) |
+| Finalize called again                         | Same file returned (idempotent)                                                                                              |
+| Expired ticket                                | Closed as failed, staging copy removed                                                                                       |
+
+Verified live once (10.4.3, generated test files, then removed by ID): a browser-style PUT to the signed URL
+works without an API key; anonymous reads and listings of the staging bucket are refused (HTTP 400);
+finalized files are served publicly (200, correct type); a repeated finalize returns the same file; a
+replacement detaches the old file; an HTML payload declared as PNG is rejected and never reaches the
+public bucket; removal unlinks both media.
+
+A public copy is written under a path no row refers to until the transaction commits, so a public file is
+never linked before it is fully validated. Leftovers (staging objects, unreferenced public objects) are for
+the cleanup (10.4.6, below), which checks references, active tickets and the 24-hour grace first.
+
+### Public rendering (10.4.4)
+
+- **Data:** `recordToDetails` (`src/lib/cms/mapping.ts`) turns a linked file into its public URL only when it is
+  exactly what the media service stores for that event — the right bucket and `events/<slug>/<uuid>.<ext>`
+  (images jpg / png / webp, guidelines pdf). Anything else is ignored (abstract art / "Coming Soon").
+  `EventRecord.imageAlt` carries the image's admin-entered alt text (`null` without one or without an
+  image).
+- **Allowlist:** `eventImageSrc(image, slug)` accepts repository images in `/images/events/` as before, and an
+  uploaded image only as the exact text
+  `<SUPABASE_URL origin>/storage/v1/object/public/ashwamedh-images/events/<this event's slug>/<uuid>.<jpg|png|webp>`
+  — no normalising, so other hosts, schemes, ports, credentials, buckets, events, encoded or traversal
+  paths, query strings, fragments and other names or extensions never match. Without `SUPABASE_URL` no
+  uploaded image is shown.
+- **Optimizer (D8):** `images.remotePatterns` is built from `SUPABASE_URL` (`src/lib/storage-images.ts`):
+  https, that host, no port, `/storage/v1/object/public/ashwamedh-images/events/**`, no query. Redirects are
+  not followed (`maximumRedirects: 0`) and source images are capped at 5 MB (`maximumResponseBody`). The
+  optimizer applies EXIF orientation (sharp `rotate()`; verified with rotated JPEGs) and strips it.
+- **Rendering:** `EventImage` (cards and the event-detail header, unchanged layout) uses the official alt
+  text when there is one, otherwise `alt=""` (decorative — the event name is the adjacent heading). The
+  guidelines PDF button links the mapped Storage URL, or an approved `guidelines_url`; otherwise "Coming
+  Soon". Stored width / height are the encoded ones (before orientation); rendering does not use them.
+- **Caching:** unchanged — event data stays tagged `cms:event:<slug>` / `cms:events` and is refreshed by the
+  media actions through `expireEventContent(slug)`. Every upload has a new uuid URL, so a replaced image is
+  never served from an old cache entry.
+
+### Admin media panels (10.4.5)
+
+`/admin/events/[slug]` has an **Event files** section between the text form and the version history, with
+an **Event image** and a **Guidelines PDF** panel (`src/components/admin/media-panel.tsx`, inside
+`event-editor.tsx`):
+
+- Shows the current file (name, size, upload time; image preview, stored dimensions and alt text), or the
+  linked path / URL an upload would replace (D2), or what the public site shows without one.
+- Upload / Replace: client-side type and size check (guidance only), ticket, direct upload to staging with
+  a progress bar, then server finalization; replacing asks for confirmation. Remove asks for confirmation
+  and only unlinks. The image's alt text can be edited (≤ 300 characters, empty = decorative).
+- Blocked, with the reason shown and linked to every control: until the content source is saved (D3),
+  while the text form has unsaved changes (D7), while the page refreshes, or while the other panel works.
+- After any successful change the page data is refreshed and the form re-created from it, so text saves
+  and file changes never use a stale version; notices (including "the restored version used a file that
+  no longer exists" — D5) survive the refresh. The guidelines link field refuses a link while an uploaded
+  PDF is attached (server validation).
+- Accessibility: labelled controls with hints, `role="progressbar"` with value, status in a polite live
+  region, errors as `role="alert"` with an icon, all targets ≥ 44 px, one column on narrow screens.
+
+**Known limitation — deleted files can stay reachable.** Removing or deleting a file stops the site from
+linking it, but it does not purge copies that were already cached. Public media is stored with
+`Cache-Control: max-age=86400` (one day; `PUBLIC_CACHE_MAX_AGE` in `media-admin.ts`, a year before the
+10.4.4 review). That bounds normal freshness only:
+
+- **Supabase CDN:** may keep serving a deleted public object until its cached copy expires; Storage
+  deletion does not guarantee an immediate purge.
+- **Next.js image optimizer:** an optimized copy is fresh for max(`minimumCacheTTL` 4 h, origin max-age)
+  = one day (`Cache-Control: public, max-age=86400, must-revalidate` on `/_next/image`). After that it is
+  served **stale** while Next.js revalidates in the background — and when revalidation fails because the
+  source is gone, Next.js keeps the old copy (stale-on-error). Verified on `next start`: after the source
+  image was deleted, the already-optimized width kept returning 200 (`HIT` / `STALE`); only widths never
+  optimized before returned 400. There is no invalidation API: the copy stays until
+  `<distDir>/cache/images` is deleted, the disk cache evicts it, or a new deployment starts with an empty
+  cache (hosted optimizers have their own cache rules).
+
+URLs are unguessable (uuid) and no longer linked from any page, but anyone who kept one may still load it.
+For a file that must disappear at once, follow the runbook below.
+
+### Cleanup of unused files (10.4.6)
+
+`npm run cms:cleanup` (trusted machine, service key — dry run; add `-- --apply` to delete) and the admin
+**Files** page (`/admin/files`: dry-run list, then "Delete N unused items" after a confirmation) run the same
+code (`src/lib/cms/cleanup.ts`):
+
+- **Deletes, within `events/` only:** file rows no event links, unused for ≥ 24 hours (since
+  `detached_at`, or since upload for a row never attached) — row first, then its object; public objects
+  without a row, older than 24 hours; staging objects older than 1 hour.
+- **Never deletes:** anything an event links (checked when planning, and the database's
+  `ON DELETE RESTRICT` refuses it at deletion); anything inside the grace; anything an active upload ticket
+  (issued and unexpired, or processing — of any age) points to; anything outside `events/`.
+- **Re-checked right before each deletion:** the row is deleted only if it is still unused for the whole
+  grace (a re-attached file is skipped); objects are deleted only if no row and no active upload appeared.
+  The browser never says what to delete; the server plans again.
+- **Failures are recoverable:** a row whose object could not be removed leaves an orphan object that the
+  next run removes. Running it again is safe. The CLI exits non-zero when anything failed.
+- Revisions may still name a deleted file; restoring one leaves that slot empty and says so (D5).
+- Run it daily or after media work, dry run first.
+- **Stuck `processing` tickets** (an upload whose finalization was interrupted and never retried) keep
+  their objects protected indefinitely; the cleanup never forces them. Recovery, by a person with database
+  access: (1) if the ticket's `file_id` is set or a `cms_files` row exists at its `object_path` and an
+  event links it, the upload actually completed — set the ticket to `finalized`; (2) otherwise, once it is
+  older than an hour, set it to `failed` (`finished_at = now()`, `failure = 'Recovered manually'`). The
+  next cleanup then removes its leftover objects after the usual grace. The admin simply uploads the file
+  again.
+
+### Runbook — a file must disappear now (e.g. published by mistake)
+
+Deleting a Storage object does **not** immediately purge copies cached by the Supabase CDN or by the
+Next.js image optimizer.
+
+1. In the event's editor, **Remove** the file (or replace it). The site stops linking it on the next visit
+   of the event page and listings.
+2. Do not bypass the 24-hour grace in the cleanup. If the object must go before that, a person with
+   project access deletes it deliberately: confirm in the database that no event links the file
+   (`image_file_id` / `guidelines_file_id`), delete its `cms_files` row (the database refuses if it is still
+   linked), then delete exactly that object in the Supabase dashboard. Record what was removed and why.
+3. **Supabase CDN:** cached copies can be served until they expire (public media is stored with
+   `max-age=86400`, one day). If the plan offers cache purging, purge that exact URL; otherwise allow up to a
+   day.
+4. **Next.js image optimizer:** an optimized copy keeps being served (stale copies are kept even when the
+   source is gone). Self-hosted: delete `<distDir>/cache/images` (all optimized images are rebuilt on
+   demand) or redeploy; a hosting provider's optimizer has its own cache — use its purge or redeploy.
+5. Check: the Storage URL and `/_next/image?url=…` for that file no longer return the image (each width
+   that was requested is a separate cached copy).
 
 ## Environment
 
@@ -261,7 +477,7 @@ to that event (and its listing) shows the new content; other event pages stay ca
 | --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 10.2      | Done — Supabase schema and storage, idempotent seed, database-backed data layer through `buildEvent()`, targeted revalidation helper.                                 |
 | 10.3      | Done — event editor with server-side validation, atomic save (`cms_save_event`), optimistic concurrency, revisions with restore, targeted refresh (proxy slug guard). |
-| 10.4      | File manager (guidelines PDFs, event images) on object storage.                                                                                                       |
+| 10.4      | 10.4.1–10.4.6 done (schema, validation, media service, public rendering, admin panels, cleanup); final QA (10.4.7) next.                                              |
 | 10.5      | Schedule (`scheduleDays` + rows), Cultural Night dates, festival settings, contact / footer / social links.                                                           |
 | 10.6      | Gallery and Team (data model + public rendering of official content only).                                                                                            |
 | 10.7      | QA, security review, backup / rollback drill, runbook.                                                                                                                |

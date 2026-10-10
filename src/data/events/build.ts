@@ -102,13 +102,15 @@ export function buildEvent(identity: EventIdentity, details?: EventDetailsInput)
     throw new Error(`Event "${slug}": status "open" needs a valid registrationLink.`);
   }
 
+  const image = text(d.image);
   return {
     slug: identity.slug,
     name: identity.name,
     category: identity.category,
     department: identity.department,
     description: list(d.description),
-    image: text(d.image),
+    image,
+    imageAlt: image ? text(d.imageAlt) : null,
     rules: list(d.rules),
     eligibility: list(d.eligibility),
     participation: d.participation ?? null,

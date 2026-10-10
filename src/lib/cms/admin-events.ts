@@ -2,11 +2,13 @@ import "server-only";
 import { eventInventory } from "@/data/events";
 import { requireAdmin } from "@/lib/admin/auth";
 import { formatIst } from "@/lib/format-ist";
+import type { EventMediaSummary, MediaFileSummary } from "@/types/admin-media";
+import { publicFileUrl } from "./client";
 import type { EventIdentity, RegistrationStatus } from "@/types/festival";
 import type { CoordinatorPayload, EventContentPayload } from "./event-form";
 import {
   CMS_TABLES,
-  EVENT_CONTENT_SELECT,
+  type Bucket,
   type CoordinatorRow,
   type EventContentRecord,
   type EventContentRow,
@@ -58,12 +60,59 @@ export async function listEventsForAdmin(): Promise<AdminEventSummary[]> {
   });
 }
 
+/** Linked file details the editor shows (Phase 10.4.5). */
+export interface AdminFileColumns {
+  bucket: Bucket;
+  path: string;
+  alt_text?: string | null;
+  original_name: string;
+  mime_type: string;
+  size_bytes: number;
+  uploaded_at: string;
+  width?: number | null;
+  height?: number | null;
+}
+
+/** The editor's select: content, coordinators and the linked files with their metadata. */
+export const ADMIN_EVENT_SELECT = [
+  "*",
+  "event_coordinators(name,designation,phone,email,sort_order)",
+  "guidelines_file:cms_files!events_content_guidelines_file_id_fkey(bucket,path,original_name,mime_type,size_bytes,uploaded_at)",
+  "image_file:cms_files!events_content_image_file_id_fkey(bucket,path,alt_text,original_name,mime_type,size_bytes,uploaded_at,width,height)",
+].join(",");
+
+export type AdminEventRecord = Omit<EventContentRecord, "guidelines_file" | "image_file"> & {
+  updated_at: string;
+  guidelines_file: AdminFileColumns | null;
+  image_file: AdminFileColumns | null;
+};
+
 export interface EventForEdit {
   identity: EventIdentity;
   /** `null` when the seed has not created the row yet (the editor cannot save then). */
-  record: (EventContentRecord & { updated_at: string }) | null;
+  record: AdminEventRecord | null;
   /** Image or uploaded files (Phase 10.4): content too, so a source stays required. */
   hasManagedFiles: boolean;
+}
+
+export function mediaSummary(record: AdminEventRecord, projectUrl: string): EventMediaSummary {
+  const file = (f: AdminFileColumns | null): MediaFileSummary | null =>
+    f && {
+      name: f.original_name,
+      sizeBytes: f.size_bytes,
+      uploadedLabel: formatIst(f.uploaded_at),
+      url: publicFileUrl(projectUrl, f.bucket, f.path),
+      width: f.width ?? null,
+      height: f.height ?? null,
+      altText: f.alt_text ?? null,
+    };
+  return {
+    image: file(record.image_file),
+    imagePath: record.image_path,
+    guidelines: file(record.guidelines_file),
+    guidelinesUrl: record.guidelines_url,
+    hasSource: Boolean(record.source_kind),
+  };
 }
 
 export async function getEventForEdit(slug: string): Promise<EventForEdit | undefined> {
@@ -73,11 +122,11 @@ export async function getEventForEdit(slug: string): Promise<EventForEdit | unde
   const { client } = cmsAdminClient();
   const { data, error } = await client
     .from(CMS_TABLES.events)
-    .select(EVENT_CONTENT_SELECT)
+    .select(ADMIN_EVENT_SELECT)
     .eq("event_slug", slug)
     .maybeSingle();
   if (error) throw new Error(`Loading the event failed: ${error.message}`);
-  const record = (data as unknown as (EventContentRecord & { updated_at: string }) | null) ?? null;
+  const record = (data as unknown as AdminEventRecord | null) ?? null;
   return {
     identity,
     record,

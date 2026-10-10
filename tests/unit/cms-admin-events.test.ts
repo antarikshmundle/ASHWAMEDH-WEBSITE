@@ -20,7 +20,11 @@ const VERSION = "2026-10-09 10:00:00.123456+00";
 let storedRow: Record<string, unknown> | null;
 let rpcResult: { data: unknown; error: { message: string } | null };
 let revisionRow: unknown;
-const rpc = vi.fn(async () => rpcResult);
+const rpc = vi.fn(async (fn: string, args?: unknown) => {
+  void args;
+  return fn === "cms_restore_event" && restoreResult ? restoreResult : rpcResult;
+});
+let restoreResult: { data: unknown; error: { message: string; code?: string } | null } | null;
 
 function query(result: () => { data: unknown; error: null }) {
   const builder = {
@@ -79,6 +83,7 @@ beforeEach(() => {
   storedRow = emptyRow();
   revisionRow = null;
   rpcResult = { data: "2026-10-09 10:05:00.5+00", error: null };
+  restoreResult = { data: { updated_at: "2026-10-09 10:06:00+00", missing: [] }, error: null };
   vi.clearAllMocks();
 });
 
@@ -209,8 +214,25 @@ describe("saveEventAction", () => {
   });
 });
 
+const REVISION_ID = "11111111-1111-4111-8111-111111111111";
+
+describe("saveEventAction — uploaded guidelines PDF (Phase 10.4.5)", () => {
+  it("refuses a guidelines link while an uploaded PDF is attached; nothing is saved", async () => {
+    storedRow = { ...emptyRow(), guidelines_file_id: "22222222-2222-4222-8222-222222222222" };
+    const { saveEventAction } = await import("@/app/admin/events/actions");
+    const state = await saveEventAction(
+      "hackathon",
+      idle,
+      form({ guidelinesUrl: "https://example.org/rules.pdf", ...SOURCE }),
+    );
+    expect(state.status).toBe("invalid");
+    expect(state.errors?.guidelinesUrl).toMatch(/uploaded guidelines PDF is attached/);
+    expect(rpc).not.toHaveBeenCalled();
+  });
+});
+
 describe("restoreRevisionAction", () => {
-  it("validates the stored version and saves it like an edit", async () => {
+  it("validates the stored version, then restores it with its media links (D5)", async () => {
     revisionRow = {
       content: {
         ...identityToSeedRows(identity, undefined).event,
@@ -222,16 +244,66 @@ describe("restoreRevisionAction", () => {
       coordinators: [],
     };
     const { restoreRevisionAction } = await import("@/app/admin/events/actions");
-    const state = await restoreRevisionAction(
-      "hackathon",
-      idle,
-      form({ revisionId: "11111111-1111-4111-8111-111111111111" }),
-    );
-    expect(state).toMatchObject({ status: "restored", values: { venue: "Old Hall" } });
-    expect(
-      (rpc.mock.calls[0] as unknown as [string, { p_content: object }])[1].p_content,
-    ).toMatchObject({ venue: "Old Hall" });
+    const state = await restoreRevisionAction("hackathon", idle, form({ revisionId: REVISION_ID }));
+    expect(state).toMatchObject({
+      status: "restored",
+      version: "2026-10-09 10:06:00+00",
+      values: { venue: "Old Hall" },
+    });
+    expect(state.missingMedia).toBeUndefined();
+    expect(rpc.mock.calls).toEqual([
+      [
+        "cms_restore_event",
+        { p_slug: "hackathon", p_expected_updated_at: VERSION, p_revision_id: REVISION_ID },
+      ],
+    ]);
     expect(updateTag).toHaveBeenCalledTimes(2);
+  });
+
+  it("reports linked files that no longer exist, and maps conflicts", async () => {
+    revisionRow = {
+      content: {
+        ...identityToSeedRows(identity, undefined).event,
+        venue: "Old Hall",
+        image_file_id: "22222222-2222-4222-8222-222222222222",
+        source_kind: "owner-confirmed",
+        source_reference: "Earlier entry",
+        source_date: "2026-10-01",
+      },
+      coordinators: [],
+    };
+    restoreResult = {
+      data: { updated_at: "2026-10-09 10:06:00+00", missing: ["image"] },
+      error: null,
+    };
+    const { restoreRevisionAction } = await import("@/app/admin/events/actions");
+    expect(
+      await restoreRevisionAction("hackathon", idle, form({ revisionId: REVISION_ID })),
+    ).toMatchObject({ status: "restored", missingMedia: ["image"] });
+
+    restoreResult = { data: null, error: { message: "cms_version_conflict", code: "P0001" } };
+    expect(
+      (await restoreRevisionAction("hackathon", idle, form({ revisionId: REVISION_ID }))).status,
+    ).toBe("conflict");
+    restoreResult = { data: null, error: { message: "cms_unknown_revision", code: "P0001" } };
+    expect(
+      await restoreRevisionAction("hackathon", idle, form({ revisionId: REVISION_ID })),
+    ).toMatchObject({ status: "invalid", errors: { form: "That version no longer exists." } });
+  });
+
+  it("keeps the source rule for a revision that links files", async () => {
+    revisionRow = {
+      content: {
+        ...identityToSeedRows(identity, undefined).event,
+        guidelines_file_id: "22222222-2222-4222-8222-222222222222",
+      },
+      coordinators: [],
+    };
+    const { restoreRevisionAction } = await import("@/app/admin/events/actions");
+    const state = await restoreRevisionAction("hackathon", idle, form({ revisionId: REVISION_ID }));
+    expect(state.status).toBe("invalid");
+    expect(state.errors?.sourceKind).toBeDefined();
+    expect(rpc).not.toHaveBeenCalled();
   });
 
   it("refuses unknown revisions and needs an admin session", async () => {

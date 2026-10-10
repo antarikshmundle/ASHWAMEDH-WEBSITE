@@ -10,7 +10,7 @@ out — the site shows TBA / Coming Soon in its place. Never write placeholder o
 
 | File                           | What it holds                                                                          | Who edits it                          |
 | ------------------------------ | -------------------------------------------------------------------------------------- | ------------------------------------- |
-| `src/data/events/inventory.ts` | The 40 events: slug, official name, vertical, department, order. **Frozen.**           | Only for an official inventory change |
+| `src/data/events/inventory.ts` | The 41 events: slug, official name, vertical, department, order. **Frozen.**           | Only for an official inventory change |
 | `src/data/events/details.ts`   | Official details per event (rules, fees, coordinators…), keyed by slug. Empty for now. | When an official PDF / form arrives   |
 | `src/data/events/build.ts`     | `buildEvent()` — combines identity + details. No content here.                         | Developers only                       |
 | `src/data/events/slugs.ts`     | Slug lookup and redirects for former slugs. No content here.                           | Developers only                       |
@@ -24,7 +24,7 @@ Each event's identity is its **slug**, **official name**, **vertical** and **dep
   generated at runtime, so a name edit can never change a URL by accident.
 - Slug rule (`docs/ux/sitemap-and-routes.md` §3): lowercase kebab-case of the official name, text in
   parentheses dropped, `&` → `and`. Example: "SDGineer (Poster Presentation)" → `sdgineer`.
-- `tests/unit/event-identity.test.ts` holds a frozen snapshot of all 40 identities. Any change to the
+- `tests/unit/event-identity.test.ts` holds a frozen snapshot of all 41 identities. Any change to the
   inventory fails that test on purpose — update both only for an owner-approved official change.
 
 ## 2. Official details — `details.ts`
@@ -153,4 +153,4 @@ here; there are none today.
 
 Run `npm run lint`, `npm run typecheck`, `npm test` and `npm run build`. The tests check that every
 details entry has a valid source, every key is a real slug, registration and PDF links pass the
-D7 rules, and the 40 identities are unchanged.
+D7 rules, and the 41 identities are unchanged.

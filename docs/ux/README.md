@@ -54,7 +54,7 @@ Every Phase 2 document tags statements with one of these categories.
 - Festival: ASHWAMEDH 2026, Priyadarshini College of Engineering (PCE), Nagpur — "PCE's flagship annual
   college festival".
 - Verticals: Technomedh, Cultural Events, Sports, Cultural Night.
-- Event inventory: 14 Technomedh, 15 Cultural, 10 Sports events with names and departments (master prompt §6).
+- Event inventory: 15 Technomedh, 15 Cultural, 11 Sports events with names and departments (master prompt §6, as corrected in the decisions log: C7.6-5, INV-01).
 - Cultural Night: 2-night event. Components shown publicly ("What's On", OD-14): Group Dance · Singing ·
   Solo Dance · Inauguration / Stage Performances. No public registration.
 - Registration path: event page → official Google Form (no custom backend, login or payment).
