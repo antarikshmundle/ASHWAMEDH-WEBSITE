@@ -2,11 +2,12 @@ import { VerticalCard } from "@/components/cards/vertical-card";
 import { CopyPlaceholder } from "@/components/ui/copy-placeholder";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { verticals } from "@/data/verticals";
+import { loadFestivalSettings } from "@/lib/cms/settings";
 
 /**
  * Four-vertical overview (reference panel 03). Used on the homepage (H2) and /events.
  */
-export function VerticalsOverview({
+export async function VerticalsOverview({
   headingAs = "h2",
   title = "Ashwamedh",
   id,
@@ -15,6 +16,7 @@ export function VerticalsOverview({
   title?: string;
   id?: string;
 }) {
+  const { taglines } = await loadFestivalSettings();
   return (
     <section
       id={id}
@@ -41,7 +43,10 @@ export function VerticalsOverview({
         <ul className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-5 lg:mt-16 lg:grid-cols-4 lg:gap-6">
           {verticals.map((vertical) => (
             <li key={vertical.id}>
-              <VerticalCard vertical={vertical} headingLevel={headingAs === "h1" ? "h2" : "h3"} />
+              <VerticalCard
+                vertical={{ ...vertical, tagline: taglines[vertical.id] }}
+                headingLevel={headingAs === "h1" ? "h2" : "h3"}
+              />
             </li>
           ))}
         </ul>

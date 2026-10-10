@@ -459,6 +459,24 @@ Next.js image optimizer.
 5. Check: the Storage URL and `/_next/image?url=…` for that file no longer return the image (each width
    that was requested is a separate cached copy).
 
+## 10.5 — Festival settings
+
+- **Migration** `…_cms_settings.sql` (additive): one-row `festival_settings` (contact phone / WhatsApp /
+  email, `social_links` — at most 8 https links, Cultural Night Day 1 / Day 2 dates, time and venue of the
+  five fixed schedule rows, four vertical taglines, source), `festival_settings_revisions`, and
+  `cms_save_settings(expected_version, content)` (lock, version check, revision, update). Same rules as
+  event content: any value needs a complete source; RLS on; service role only.
+- **Public:** `loadFestivalSettings()` (`src/lib/cms/settings.ts`) — repository mode returns the repository
+  values (`src/lib/festival-settings.ts`); database mode reads the row, tagged `cms:settings`. Used by the
+  footer (contact, social links), Contact page, schedule panel, Cultural Night band and the vertical
+  taglines (cards, listings, Cultural Night band). Empty values keep today's TBA / placeholder output.
+- **Admin:** `/admin/settings` (dashboard tiles Schedule, Cultural Night, Festival Settings, Contact /
+  Footer). Save refreshes `cms:settings` only; since the footer is on every page, every page that read the
+  settings is regenerated on its next visit.
+- **Fixed in the repository:** schedule row titles and links, "What's On", the number of Cultural Night
+  days. **Deferred:** schedule day tabs — not shown until the official days are confirmed (OD-04); they need
+  a decision on per-day rows.
+
 ## Environment
 
 | Variable                             | Needed for                  | Notes                                                                          |
@@ -473,11 +491,11 @@ Next.js image optimizer.
 
 ## Next milestones
 
-| Milestone | Scope                                                                                                                                                                 |
-| --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 10.2      | Done — Supabase schema and storage, idempotent seed, database-backed data layer through `buildEvent()`, targeted revalidation helper.                                 |
-| 10.3      | Done — event editor with server-side validation, atomic save (`cms_save_event`), optimistic concurrency, revisions with restore, targeted refresh (proxy slug guard). |
-| 10.4      | 10.4.1–10.4.6 done (schema, validation, media service, public rendering, admin panels, cleanup); final QA (10.4.7) next.                                              |
-| 10.5      | Schedule (`scheduleDays` + rows), Cultural Night dates, festival settings, contact / footer / social links.                                                           |
-| 10.6      | Gallery and Team (data model + public rendering of official content only).                                                                                            |
-| 10.7      | QA, security review, backup / rollback drill, runbook.                                                                                                                |
+| Milestone | Scope                                                                                                                                                                        |
+| --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 10.2      | Done — Supabase schema and storage, idempotent seed, database-backed data layer through `buildEvent()`, targeted revalidation helper.                                        |
+| 10.3      | Done — event editor with server-side validation, atomic save (`cms_save_event`), optimistic concurrency, revisions with restore, targeted refresh (proxy slug guard).        |
+| 10.4      | 10.4.1–10.4.6 done (schema, validation, media service, public rendering, admin panels, cleanup); final QA (10.4.7) next.                                                     |
+| 10.5      | Done (migration applied 2026-10-11) — festival settings: contact, social links, Cultural Night dates, schedule times / venues, taglines. Schedule day tabs deferred (OD-04). |
+| 10.6      | Gallery and Team (data model + public rendering of official content only).                                                                                                   |
+| 10.7      | QA, security review, backup / rollback drill, runbook.                                                                                                                       |

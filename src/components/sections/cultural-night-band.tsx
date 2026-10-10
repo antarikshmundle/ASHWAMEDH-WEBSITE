@@ -2,13 +2,14 @@ import { VerticalArt } from "@/components/art/vertical-art";
 import { ArrowLink } from "@/components/ui/button";
 import { CopyPlaceholder } from "@/components/ui/copy-placeholder";
 import { culturalNight } from "@/data/festival";
+import { loadFestivalSettings } from "@/lib/cms/settings";
 import { fact } from "@/lib/display";
 
 /**
  * Cultural Night band (reference panel 07): stage-light atmosphere, title, Day 1 / Day 2 cards.
  * Two nights are confirmed; dates are TBA. Used as the homepage preview and the page hero.
  */
-export function CulturalNightBand({
+export async function CulturalNightBand({
   headingAs = "h2",
   showLink = false,
 }: {
@@ -16,6 +17,12 @@ export function CulturalNightBand({
   showLink?: boolean;
 }) {
   const Heading = headingAs;
+  const settings = await loadFestivalSettings();
+  const tagline = settings.taglines["cultural-night"];
+  const nights = culturalNight.nights.map((night, i) => ({
+    ...night,
+    date: settings.culturalNightDates[i] ?? null,
+  }));
   return (
     <div
       data-vertical="cultural-night"
@@ -34,10 +41,14 @@ export function CulturalNightBand({
           Cultural Night
         </Heading>
         {/* OD-07: tagline area kept; reference text not used */}
-        <CopyPlaceholder lines={1} align="center" className="mt-5 w-56" />
+        {tagline ? (
+          <p className="mt-5 type-label text-fg">{tagline}</p>
+        ) : (
+          <CopyPlaceholder lines={1} align="center" className="mt-5 w-56" />
+        )}
 
         <ul className="mt-10 grid w-full max-w-md grid-cols-2 gap-4">
-          {culturalNight.nights.map((night) => (
+          {nights.map((night) => (
             <li
               key={night.label}
               className="flex flex-col items-center gap-1 rounded-xl border border-accent/55 bg-surface/70 px-4 py-5 backdrop-blur-[2px]"

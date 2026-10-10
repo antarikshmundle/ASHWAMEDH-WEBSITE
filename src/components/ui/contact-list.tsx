@@ -1,16 +1,13 @@
 import { Mail, MessageCircle, Phone, type LucideIcon } from "lucide-react";
 import { IconTile } from "@/components/ui/icon-tile";
-import { contact } from "@/data/festival";
+import type { FestivalSettings } from "@/lib/festival-settings";
 import { contactHref, type ContactKind } from "@/lib/contact";
 import { TBA, fact } from "@/lib/display";
 
 /** Contact rows, in display order. Values come from data; unknown values render as TBA. */
-const rows: readonly {
-  kind: ContactKind;
-  icon: LucideIcon;
-  label: string;
-  value: string | null;
-}[] = [
+const contactRows = (
+  contact: FestivalSettings["contact"],
+): readonly { kind: ContactKind; icon: LucideIcon; label: string; value: string | null }[] => [
   { kind: "phone", icon: Phone, label: "Phone", value: contact.phone },
   { kind: "whatsapp", icon: MessageCircle, label: "WhatsApp", value: contact.whatsapp },
   { kind: "email", icon: Mail, label: "Email", value: contact.email },
@@ -23,7 +20,15 @@ const rows: readonly {
  * The label is always available to screen readers ("Phone: TBA"). Official values become
  * tel: / WhatsApp / mailto: links; TBA stays plain text.
  */
-export function ContactList({ variant }: { variant: "compact" | "cards" }) {
+export function ContactList({
+  variant,
+  contact,
+}: {
+  variant: "compact" | "cards";
+  /** From loadFestivalSettings() (Phase 10.5). */
+  contact: FestivalSettings["contact"];
+}) {
+  const rows = contactRows(contact);
   if (variant === "compact") {
     return (
       <ul className="flex flex-col gap-1">

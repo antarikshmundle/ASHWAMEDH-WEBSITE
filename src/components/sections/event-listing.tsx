@@ -6,6 +6,7 @@ import { CopyPlaceholder } from "@/components/ui/copy-placeholder";
 import { JumpToEvent } from "@/components/ui/jump-to-event";
 import { VerticalIcon } from "@/components/ui/vertical-icon";
 import { loadEventsByVertical } from "@/lib/cms/events";
+import { loadFestivalSettings } from "@/lib/cms/settings";
 import { getVertical } from "@/data/verticals";
 import type { EventVertical } from "@/types/festival";
 
@@ -15,6 +16,7 @@ import type { EventVertical } from "@/types/festival";
  */
 export async function EventListing({ vertical }: { vertical: EventVertical }) {
   const info = getVertical(vertical);
+  const tagline = (await loadFestivalSettings()).taglines[vertical];
   // Content from the CMS source (repository or database, src/lib/cms/events.ts).
   const list = await loadEventsByVertical(vertical);
 
@@ -69,8 +71,8 @@ export async function EventListing({ vertical }: { vertical: EventVertical }) {
             <header className="flex flex-col items-center text-center">
               <h1 className="type-h1 text-accent">{info.shortName}</h1>
               {/* OD-07: tagline area kept; reference text not used */}
-              {info.tagline ? (
-                <p className="mt-3 type-label text-fg">{info.tagline}</p>
+              {tagline ? (
+                <p className="mt-3 type-label text-fg">{tagline}</p>
               ) : (
                 <CopyPlaceholder lines={1} align="center" className="mt-4 w-56" />
               )}

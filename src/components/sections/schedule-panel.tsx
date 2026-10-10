@@ -1,13 +1,15 @@
 import { SectionHeading } from "@/components/ui/section-heading";
 import { ScheduleList } from "@/components/sections/schedule-list";
 import { sectionTitles } from "@/data/festival";
+import { loadFestivalSettings } from "@/lib/cms/settings";
 import { scheduleStatus } from "@/lib/display";
 
 /**
  * Schedule panel (reference panel 06): title, status line and the five category rows inside
  * one surface panel. No day tabs until the official day count exists (OD-04).
  */
-export function SchedulePanel({ headingAs = "h2" }: { headingAs?: "h1" | "h2" }) {
+export async function SchedulePanel({ headingAs = "h2" }: { headingAs?: "h1" | "h2" }) {
+  const { schedule } = await loadFestivalSettings();
   return (
     <div
       data-vertical="brand"
@@ -26,7 +28,7 @@ export function SchedulePanel({ headingAs = "h2" }: { headingAs?: "h1" | "h2" })
         {sectionTitles.schedule}
       </SectionHeading>
       <div className="mt-10">
-        <ScheduleList />
+        <ScheduleList schedule={schedule} />
       </div>
     </div>
   );

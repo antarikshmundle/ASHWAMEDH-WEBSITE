@@ -188,7 +188,7 @@ const paragraphs = (value: string) =>
 /** One item per line (rules). */
 const lines = (value: string) => value.split(/\r?\n/).map(clean).filter(Boolean);
 
-function isPastOrToday(isoDate: string, today: Date): boolean {
+export function isPastOrToday(isoDate: string, today: Date): boolean {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(isoDate);
   if (!match) return false;
   const date = new Date(`${isoDate}T00:00:00Z`);

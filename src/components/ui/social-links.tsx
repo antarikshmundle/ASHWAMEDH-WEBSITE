@@ -1,13 +1,13 @@
 import { Globe } from "lucide-react";
-import { socialLinks } from "@/data/festival";
+import type { FestivalSettings } from "@/lib/festival-settings";
 
 /**
  * Official social handles (OD-08). Renders nothing until official links exist — never a
  * placeholder `#`. Buttons follow the reserved spec (docs/design-system/components.md):
  * 40 × 40 round, control border. Only https links are rendered.
  */
-export function SocialLinks() {
-  const links = socialLinks.filter((link) => link.href.startsWith("https://"));
+export function SocialLinks({ links: all }: { links: FestivalSettings["socialLinks"] }) {
+  const links = all.filter((link) => link.href.startsWith("https://"));
   if (links.length === 0) return null;
 
   return (

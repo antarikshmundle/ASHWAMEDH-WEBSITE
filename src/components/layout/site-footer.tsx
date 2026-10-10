@@ -5,11 +5,13 @@ import { CopyPlaceholder } from "@/components/ui/copy-placeholder";
 import { AshwamedhLogo } from "@/components/ui/logos";
 import { SocialLinks } from "@/components/ui/social-links";
 import { footerQuickLinks } from "@/data/navigation";
+import { loadFestivalSettings } from "@/lib/cms/settings";
 import { site } from "@/data/site";
 import { verticals } from "@/data/verticals";
 
 /** Footer (reference panel 09, docs/ux/navigation.md §14). Brand accent only. */
-export function SiteFooter() {
+export async function SiteFooter() {
+  const settings = await loadFestivalSettings();
   return (
     <footer data-vertical="brand" className="border-t border-line-subtle bg-base">
       <div className="container-site grid gap-10 py-12 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1.2fr] lg:gap-8 lg:py-16">
@@ -22,7 +24,7 @@ export function SiteFooter() {
           {/* OD-07: description copy area kept, reference text not used */}
           <CopyPlaceholder lines={2} className="max-w-64" />
           {/* OD-08: renders nothing until official handles exist */}
-          <SocialLinks />
+          <SocialLinks links={settings.socialLinks} />
         </div>
 
         {/* Quick links + Events side by side on mobile */}
@@ -38,7 +40,7 @@ export function SiteFooter() {
         {/* Contact + college */}
         <div className="flex flex-col justify-between gap-8">
           <FooterColumn title="Contact">
-            <ContactList variant="compact" />
+            <ContactList variant="compact" contact={settings.contact} />
           </FooterColumn>
           <CollegeLockup variant="footer" className="lg:justify-end" />
         </div>

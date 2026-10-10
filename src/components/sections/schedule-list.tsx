@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ChevronRight, Drama, Flame, Music, Settings, Trophy } from "lucide-react";
 import { IconTile } from "@/components/ui/icon-tile";
 import { scheduleRows } from "@/data/festival";
+import type { FestivalSettings } from "@/lib/festival-settings";
 import { fact, venueFact } from "@/lib/display";
 
 const rowIcons = {
@@ -16,10 +17,11 @@ const rowIcons = {
  * Schedule category rows (reference panel 06). Titles are confirmed festival components;
  * time and venue stay TBA (OD-04, OD-05). Each row carries its own vertical colour.
  */
-export function ScheduleList() {
+export function ScheduleList({ schedule }: { schedule: FestivalSettings["schedule"] }) {
+  const rows = scheduleRows.map((row) => ({ ...row, ...schedule[row.key] }));
   return (
     <ul className="flex flex-col gap-3">
-      {scheduleRows.map((row) => (
+      {rows.map((row) => (
         <li key={row.title} data-vertical={row.vertical}>
           <Link
             href={row.href}

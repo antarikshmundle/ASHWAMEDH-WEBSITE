@@ -9,6 +9,8 @@ export const CMS_TABLES = {
   coordinators: "event_coordinators",
   files: "cms_files",
   tickets: "cms_upload_tickets",
+  settings: "festival_settings",
+  settingsRevisions: "festival_settings_revisions",
 } as const;
 
 export const BUCKETS = {
@@ -112,3 +114,5 @@ export const EVENT_CONTENT_SELECT = [
 /** Cache tags for public reads (src/lib/cms/events.ts) and their invalidation (revalidate.ts). */
 export const EVENTS_TAG = "cms:events";
 export const eventTag = (slug: string) => `cms:event:${slug}`;
+/** Festival settings (Phase 10.5): contact, social links, Cultural Night dates, schedule, taglines. */
+export const SETTINGS_TAG = "cms:settings";

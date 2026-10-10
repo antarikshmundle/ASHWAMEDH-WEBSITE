@@ -38,17 +38,31 @@ export const culturalNight = {
  * Schedule category rows (docs/ux/page-structures.md). Titles are confirmed festival
  * components; time and venue stay `null` (OD-04, OD-05). No day tabs until official.
  */
-export const scheduleRows = [
-  { title: "Inauguration Ceremony", vertical: "brand", href: "/cultural-night" },
-  { title: "Technomedh Events", vertical: "technomedh", href: "/technomedh" },
-  { title: "Cultural Events", vertical: "cultural", href: "/cultural" },
-  { title: "Sports Events", vertical: "sports", href: "/sports" },
-  { title: "Cultural Night", vertical: "cultural-night", href: "/cultural-night" },
-].map((row) => ({
+export const scheduleRows = (
+  [
+    {
+      key: "inauguration",
+      title: "Inauguration Ceremony",
+      vertical: "brand",
+      href: "/cultural-night",
+    },
+    { key: "technomedh", title: "Technomedh Events", vertical: "technomedh", href: "/technomedh" },
+    { key: "cultural", title: "Cultural Events", vertical: "cultural", href: "/cultural" },
+    { key: "sports", title: "Sports Events", vertical: "sports", href: "/sports" },
+    {
+      key: "cultural-night",
+      title: "Cultural Night",
+      vertical: "cultural-night",
+      href: "/cultural-night",
+    },
+  ] as const
+).map((row) => ({
   ...row,
   time: null as string | null,
   venue: null as string | null,
 })) as readonly {
+  /** Stable key for the CMS (Phase 10.5: time and venue are editable there). */
+  key: "inauguration" | "technomedh" | "cultural" | "sports" | "cultural-night";
   title: string;
   vertical: "brand" | "technomedh" | "cultural" | "sports" | "cultural-night";
   href: string;

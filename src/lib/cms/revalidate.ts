@@ -2,7 +2,7 @@ import "server-only";
 import { updateTag } from "next/cache";
 import { eventInventory } from "@/data/events";
 import { requireAdmin } from "@/lib/admin/auth";
-import { EVENTS_TAG, eventTag } from "./schema";
+import { EVENTS_TAG, SETTINGS_TAG, eventTag } from "./schema";
 
 /**
  * Targeted refresh after an admin saves event content (Phase 10.2). Call it from the Server
@@ -18,4 +18,13 @@ export async function expireEventContent(slug: string): Promise<void> {
   }
   updateTag(eventTag(slug));
   updateTag(EVENTS_TAG);
+}
+
+/**
+ * Refresh after the festival settings are saved (Phase 10.5). The footer shows contact details and
+ * social links on every page, so every page that read the settings is regenerated on its next visit.
+ */
+export async function expireFestivalSettings(): Promise<void> {
+  await requireAdmin();
+  updateTag(SETTINGS_TAG);
 }
