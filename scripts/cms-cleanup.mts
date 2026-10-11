@@ -3,13 +3,17 @@
 //   npm run cms:cleanup -- --apply   (deletes; every item is re-checked first)
 // Keeps everything in use, everything inside the 24-hour grace (1 hour for staging) and anything an
 // active upload points to. Safe to run again. Needs SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY
-// (e.g. from .env.local). See docs/architecture/admin-cms.md for the runbook.
+// (from the shell, .env.local or .env — the same precedence as Next.js). See
+// docs/architecture/admin-cms.md for the runbook.
 import { existsSync } from "node:fs";
 import { applyCleanup, loadCleanupInputs, planCleanup } from "@/lib/cms/cleanup";
 import { createCmsClient } from "@/lib/cms/client";
 import { requireSupabaseCredentials } from "@/lib/cms/config";
 
+// loadEnvFile never overwrites a variable that is already set, so the shell wins, then .env.local,
+// then .env.
 if (existsSync(".env.local")) process.loadEnvFile(".env.local");
+if (existsSync(".env")) process.loadEnvFile(".env");
 
 const args = process.argv.slice(2);
 const unknown = args.filter((a) => a !== "--apply");
