@@ -1,7 +1,22 @@
 import type { NextConfig } from "next";
 import { storageImagePatterns } from "./src/lib/storage-images";
 
+/**
+ * Baseline security headers on every response (Phase 10.7). Deliberately without CSP (not in this
+ * phase) and without HSTS: HSTS is added only once the production host is confirmed HTTPS-only
+ * (docs/operations/runbook.md).
+ */
+export const SECURITY_HEADERS = [
+  { key: "X-Content-Type-Options", value: "nosniff" },
+  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+  // The site never needs to be framed (clickjacking protection, incl. /admin).
+  { key: "X-Frame-Options", value: "DENY" },
+];
+
 const nextConfig: NextConfig = {
+  async headers() {
+    return [{ source: "/:path*", headers: SECURITY_HEADERS }];
+  },
   images: {
     // Required list in Next.js 16; 75 is the default quality.
     qualities: [75],

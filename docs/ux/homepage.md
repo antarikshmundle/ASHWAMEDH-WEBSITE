@@ -20,6 +20,9 @@ Tags: **[A]** reference · **[B]** confirmed · **[C]** TBA · **[OD-xx]** locke
 - **"Featured Events" / "Upcoming Events"**: there is no reference panel for it, and nothing is "upcoming"
   without dates (D4, OD-11).
 - Sponsors, gallery strip, team, stats/counters, countdown: none of these are in the reference.
+  A homepage countdown is recorded as a **future requirement** (not implemented): it needs an official
+  festival date and start time with its source, design approval, IST handling and defined behaviour
+  before / after the date — see [docs/operations/runbook.md](../operations/runbook.md) §7.
 
 ## H1 — Cinematic hero (panel 01)
 

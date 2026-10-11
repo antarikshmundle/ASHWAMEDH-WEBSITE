@@ -502,6 +502,19 @@ Next.js image optimizer.
 - **Cleanup** also covers `gallery/`: a file a gallery item uses is in use; a deleted item's file goes after
   the 24-hour grace.
 
+## 10.7 — QA, security review and operations
+
+- **Security headers** on every response: `X-Content-Type-Options: nosniff`, `Referrer-Policy:
+strict-origin-when-cross-origin`, `X-Frame-Options: DENY` (`next.config.ts`). No CSP in this phase; HSTS
+  only after the production host is confirmed HTTPS-only.
+- **Security-invariant test** (`tests/unit/cms-security-invariants.test.ts`): all migrations on PGlite with
+  Supabase-like default grants; every public table RLS on with no policies or client grants, no public
+  function executable by anon / authenticated, no SECURITY DEFINER, every function pins `search_path`.
+  Exceptions must be listed in the test with a reason (none today).
+- **Operations:** deploy checklist, migrations and rollback, routine tasks, backup / restore and open
+  decisions are in [docs/operations/runbook.md](../operations/runbook.md).
+- **Open product decision:** the dashboard "Settings" tile stays "Not available yet".
+
 ## Environment
 
 | Variable                             | Needed for                  | Notes                                                                          |
@@ -516,11 +529,11 @@ Next.js image optimizer.
 
 ## Next milestones
 
-| Milestone | Scope                                                                                                                                                                        |
-| --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 10.2      | Done — Supabase schema and storage, idempotent seed, database-backed data layer through `buildEvent()`, targeted revalidation helper.                                        |
-| 10.3      | Done — event editor with server-side validation, atomic save (`cms_save_event`), optimistic concurrency, revisions with restore, targeted refresh (proxy slug guard).        |
-| 10.4      | 10.4.1–10.4.6 done (schema, validation, media service, public rendering, admin panels, cleanup); final QA (10.4.7) next.                                                     |
-| 10.5      | Done (migration applied 2026-10-11) — festival settings: contact, social links, Cultural Night dates, schedule times / venues, taglines. Schedule day tabs deferred (OD-04). |
-| 10.6      | Done (migration applied 2026-10-10) — Gallery (official images via the 10.4 pipeline) and Team (names, roles, groups; no photos), draft / published, ordered.                |
-| 10.7      | QA, security review, backup / rollback drill, runbook.                                                                                                                       |
+| Milestone | Scope                                                                                                                                                                                                          |
+| --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 10.2      | Done — Supabase schema and storage, idempotent seed, database-backed data layer through `buildEvent()`, targeted revalidation helper.                                                                          |
+| 10.3      | Done — event editor with server-side validation, atomic save (`cms_save_event`), optimistic concurrency, revisions with restore, targeted refresh (proxy slug guard).                                          |
+| 10.4      | Done — committed `4e381a0` (2026-10-10): schema, validation, media service, public rendering, admin panels, cleanup; final QA 10.4.7 passed.                                                                   |
+| 10.5      | Done — committed `205ffcf` (2026-10-10; migration applied 2026-10-10): festival settings — contact, social links, Cultural Night dates, schedule times / venues, taglines. Schedule day tabs deferred (OD-04). |
+| 10.6      | Done — committed `79d11a2` (2026-10-11; migration applied 2026-10-10): Gallery (official images via the 10.4 pipeline) and Team (names, roles, groups; no photos), draft / published, ordered.                 |
+| 10.7      | Done (2026-10-11) — QA, security review (headers, invariants test, secret scan, live permissions, audit), restore drill, runbook ([docs/operations/runbook.md](../operations/runbook.md)).                     |
