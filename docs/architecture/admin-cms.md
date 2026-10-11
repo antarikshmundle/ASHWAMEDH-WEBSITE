@@ -430,11 +430,13 @@ code (`src/lib/cms/cleanup.ts`):
 - **Failures are recoverable:** a row whose object could not be removed leaves an orphan object that the
   next run removes. Running it again is safe. The CLI exits non-zero when anything failed.
 - Revisions may still name a deleted file; restoring one leaves that slot empty and says so (D5).
+- Upload tickets are never changed by a deletion: a finalized ticket keeps the purged file's id as history
+  (10.6 follow-up below).
 - Run it daily or after media work, dry run first.
 - **Stuck `processing` tickets** (an upload whose finalization was interrupted and never retried) keep
   their objects protected indefinitely; the cleanup never forces them. Recovery, by a person with database
-  access: (1) if the ticket's `file_id` is set or a `cms_files` row exists at its `object_path` and an
-  event links it, the upload actually completed — set the ticket to `finalized`; (2) otherwise, once it is
+  access: (1) if a `cms_files` row exists at its `object_path` (the ticket's `file_id`, when set, names it)
+  and an event links it, the upload actually completed — set the ticket to `finalized`; (2) otherwise, once it is
   older than an hour, set it to `failed` (`finished_at = now()`, `failure = 'Recovered manually'`). The
   next cleanup then removes its leftover objects after the usual grace. The admin simply uploads the file
   again.
@@ -501,6 +503,14 @@ Next.js image optimizer.
   supported yet.
 - **Cleanup** also covers `gallery/`: a file a gallery item uses is in use; a deleted item's file goes after
   the 24-hour grace.
+- **Ticket file ids are history (follow-up, `…_cms_ticket_file_history.sql`).** `cms_upload_tickets.file_id`
+  is no longer a foreign key. It used to be `ON DELETE SET NULL`, so the cleanup rewrote every finalized
+  ticket whose file it purged; a ticket is the audit record of an upload and now never changes after it
+  finishes. The id is written only by the finalize RPCs, in the same transaction that creates the file, so it
+  is valid when written; once the cleanup purges that file it points at no row — by design. Files in use stay
+  protected by the unchanged `RESTRICT` keys from `events_content` and `gallery_items`. A repeated finalize of
+  a purged upload still answers (`repeated: true`, the historical `file_id`; for the gallery `item_id: null`).
+  Tests: `tests/unit/cms-ticket-file-history-schema.test.ts`. Rollback: see the runbook (one-way in practice).
 
 ## 10.7 — QA, security review and operations
 

@@ -44,15 +44,26 @@ line overrides an earlier value. Restart the server after any change.
 Migrations are forward-only and are never edited after being applied. A rollback is a **new**
 reviewed migration (or a provider restore, §5). What undoing each would mean:
 
-| Migration                                    | Adds                                                   | Undoing it                                                                          |
-| -------------------------------------------- | ------------------------------------------------------ | ----------------------------------------------------------------------------------- |
-| `20261008120000_cms_content`                 | Core tables, constraints, triggers                     | Drops all CMS content — restore from backup instead.                                |
-| `20261008120100_cms_storage`                 | Public documents / images buckets                      | Only when empty.                                                                    |
-| `20261009120000_cms_event_editor`            | Revisions table, `cms_save_event`                      | Loses event history.                                                                |
-| `20261010120000_cms_media`                   | Staging bucket, file dimensions, RESTRICT FKs, tickets | Unlink media first; loses tickets.                                                  |
-| `20261010130000_cms_trigger_function_grants` | Revokes trigger-function EXECUTE from PUBLIC           | Never undo (security fix).                                                          |
-| `20261011120000_cms_settings`                | `festival_settings`, revisions, `cms_save_settings`    | Loses festival settings; the site falls back to repository values.                  |
-| `20261012120000_cms_collections`             | Gallery / team tables, gallery tickets, RPCs           | Delete gallery items first (files then go through the cleanup); team rows are lost. |
+| Migration                                    | Adds                                                           | Undoing it                                                                          |
+| -------------------------------------------- | -------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| `20261008120000_cms_content`                 | Core tables, constraints, triggers                             | Drops all CMS content — restore from backup instead.                                |
+| `20261008120100_cms_storage`                 | Public documents / images buckets                              | Only when empty.                                                                    |
+| `20261009120000_cms_event_editor`            | Revisions table, `cms_save_event`                              | Loses event history.                                                                |
+| `20261010120000_cms_media`                   | Staging bucket, file dimensions, RESTRICT FKs, tickets         | Unlink media first; loses tickets.                                                  |
+| `20261010130000_cms_trigger_function_grants` | Revokes trigger-function EXECUTE from PUBLIC                   | Never undo (security fix).                                                          |
+| `20261011120000_cms_settings`                | `festival_settings`, revisions, `cms_save_settings`            | Loses festival settings; the site falls back to repository values.                  |
+| `20261012120000_cms_collections`             | Gallery / team tables, gallery tickets, RPCs                   | Delete gallery items first (files then go through the cleanup); team rows are lost. |
+| `20261013120000_cms_ticket_file_history`     | Drops the ticket → file foreign key; `file_id` becomes history | One-way in practice — see the note below.                                           |
+
+**Note — undoing `20261013120000_cms_ticket_file_history`.** The key can technically be added back
+without touching existing rows: `ADD CONSTRAINT … FOREIGN KEY (file_id) REFERENCES cms_files (id) ON DELETE
+SET NULL NOT VALID` skips the check of tickets that already name a purged file. But restoring
+`ON DELETE SET NULL` brings back exactly what this migration removed: every later file deletion (the
+cleanup) would rewrite the finalized tickets that point at it. Restoring the full original guarantee —
+`VALIDATE CONSTRAINT`, or adding the key without `NOT VALID` — fails while any ticket names a purged file,
+and could only pass by resolving those dangling ids (for example setting them to NULL), which means
+modifying finalized ticket records — the very thing this migration exists to prevent. Treat it as
+one-way; decide any change to it as a new reviewed migration.
 
 The version prefix of a migration file is a naming timestamp, not the date it was applied; the applied
 history is `supabase migration list`.
@@ -117,10 +128,13 @@ them; no storage policies on the CMS buckets.
   date is set (hidden — never a guessed target), during the festival and after it ends.
 - **QA artifacts from the 10.6 live test** — synthetic gallery file `ebbf2cc6-66f3-4e6c-9db4-df9a88c4c06b`
   (object `ashwamedh-images/gallery/28adcf10-67b4-41fb-aefd-77f57b641248.png`). Its 24-hour grace ended
-  2026-10-11 07:47:18 UTC, but its **deletion is deferred**: the finalized upload ticket
-  `c8ff2bb0-adf5-4c19-a1f9-16e34f8cc110` still references the file, and the cleanup would currently set that
-  ticket's `file_id` to NULL (`ON DELETE SET NULL`). Do not delete it — neither `npm run cms:cleanup -- --apply`
-  nor the admin Files page — until this is resolved. The ticket must be preserved unchanged pending the
-  retention decision.
+  2026-10-11 07:47:18 UTC, but its **deletion is deferred** until the migration
+  `20261013120000_cms_ticket_file_history` has been applied to the live database and verified (the ticket → file
+  foreign key is gone). Until then the cleanup would set the finalized upload ticket
+  `c8ff2bb0-adf5-4c19-a1f9-16e34f8cc110`'s `file_id` to NULL (`ON DELETE SET NULL`), so do not delete the file —
+  neither `npm run cms:cleanup -- --apply` nor the admin Files page. After the migration the deletion is not
+  expected to change the ticket; confirm it by comparing the ticket's full row before and after. Each live step
+  (migration dry run and apply, ticket snapshot, cleanup dry run, `--apply`, verification) needs its own approval.
+  The ticket must be preserved unchanged pending the retention decision.
 - **Deployment** — the production host, its environment variables and CDN purge options are not
   verified from this repository.
