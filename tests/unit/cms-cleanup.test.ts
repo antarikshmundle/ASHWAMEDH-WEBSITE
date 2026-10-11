@@ -112,18 +112,35 @@ describe("planCleanup", () => {
     expect(plan.kept.inGrace).toBe(2);
   });
 
-  it("touches nothing outside events/ or in other buckets", () => {
+  it("touches nothing outside events/ and gallery/ or in other buckets", () => {
     const plan = planCleanup(
       input({
-        files: [file(1, { path: `gallery/${U(1)}.png` })],
+        files: [file(1, { path: `team/${U(1)}.png` })],
         objects: [
-          { bucket: "ashwamedh-images", path: "gallery/x.png", writtenAt: ago(90 * H) },
+          { bucket: "ashwamedh-images", path: "logos/x.png", writtenAt: ago(90 * H) },
           { bucket: "other-bucket", path: "events/x/y.png", writtenAt: ago(90 * H) },
         ],
       }),
     );
     expect([plan.files, plan.orphans, plan.staging]).toEqual([[], [], []]);
     expect(plan.kept.outsideEvents).toBe(1);
+  });
+
+  it("treats gallery files like event files: kept while a gallery item uses them (10.6)", () => {
+    const used = file(1, { path: `gallery/${U(1)}.png`, detached_at: null });
+    const removed = file(2, { path: `gallery/${U(2)}.png` }); // gallery item deleted 25 h ago
+    const plan = planCleanup(
+      input({
+        files: [used, removed],
+        referenced: new Set([U(1)]),
+        objects: [
+          { bucket: "ashwamedh-images", path: "gallery/orphan.png", writtenAt: ago(30 * H) },
+        ],
+      }),
+    );
+    expect(plan.files.map((f) => f.id)).toEqual([U(2)]);
+    expect(plan.orphans.map((o) => o.path)).toEqual(["gallery/orphan.png"]);
+    expect(plan.kept.inUse).toBe(1);
   });
 
   it("is idempotent: after the deletions nothing is left to plan", () => {
@@ -320,4 +337,41 @@ describe("npm run cms:cleanup", () => {
       stderr: expect.stringMatching(/Unknown option\(s\): --force/),
     });
   }, 30_000);
+});
+
+describe("loadCleanupInputs", () => {
+  it("counts files used by gallery items as in use (10.6), and tolerates the missing table before it", async () => {
+    const { loadCleanupInputs } = await import("@/lib/cms/cleanup");
+    const make = (gallery: { data: unknown; error: unknown }) =>
+      ({
+        from: (table: string) => {
+          const reply =
+            table === "gallery_items"
+              ? gallery
+              : table === "events_content"
+                ? { data: [{ image_file_id: U(1), guidelines_file_id: null }], error: null }
+                : { data: [], error: null };
+          const b = {
+            select: () => b,
+            in: () => b,
+            then: (r: (v: unknown) => unknown) => Promise.resolve(reply).then(r),
+          };
+          return b;
+        },
+        storage: { from: () => ({ list: async () => ({ data: [], error: null }) }) },
+      }) as never;
+    const withGallery = await loadCleanupInputs(
+      make({ data: [{ file_id: U(2) }], error: null }),
+      NOW,
+    );
+    expect([...withGallery.referenced].sort()).toEqual([U(1), U(2)]);
+    const before = await loadCleanupInputs(
+      make({ data: null, error: { message: "missing", code: "PGRST205" } }),
+      NOW,
+    );
+    expect([...before.referenced]).toEqual([U(1)]);
+    await expect(
+      loadCleanupInputs(make({ data: null, error: { message: "down", code: "57P01" } }), NOW),
+    ).rejects.toThrow(/Loading gallery items failed/);
+  });
 });

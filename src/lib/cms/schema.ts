@@ -10,6 +10,8 @@ export const CMS_TABLES = {
   files: "cms_files",
   tickets: "cms_upload_tickets",
   settings: "festival_settings",
+  gallery: "gallery_items",
+  team: "team_members",
   settingsRevisions: "festival_settings_revisions",
 } as const;
 
@@ -78,8 +80,9 @@ export type TicketStatus = "issued" | "processing" | "finalized" | "failed";
 /** cms_upload_tickets — one signed direct upload (Phase 10.4, D1). */
 export interface UploadTicketRow {
   id: string;
-  event_slug: string;
-  kind: "image" | "guidelines";
+  /** NULL for gallery tickets (Phase 10.6). */
+  event_slug: string | null;
+  kind: "image" | "guidelines" | "gallery";
   object_path: string;
   original_name: string;
   declared_type: string;
@@ -116,3 +119,6 @@ export const EVENTS_TAG = "cms:events";
 export const eventTag = (slug: string) => `cms:event:${slug}`;
 /** Festival settings (Phase 10.5): contact, social links, Cultural Night dates, schedule, taglines. */
 export const SETTINGS_TAG = "cms:settings";
+/** Gallery and Team (Phase 10.6). */
+export const GALLERY_TAG = "cms:gallery";
+export const TEAM_TAG = "cms:team";

@@ -32,7 +32,7 @@ console.log(`Old staging objects:             ${plan.staging.length}`);
 for (const o of plan.staging) console.log(`  ${o.path} (written ${o.writtenAt})`);
 const k = plan.kept;
 console.log(
-  `Kept: ${k.inUse} in use, ${k.inGrace} within the grace, ${k.activeUpload} with an active upload, ${k.outsideEvents} outside events/`,
+  `Kept: ${k.inUse} in use, ${k.inGrace} within the grace, ${k.activeUpload} with an active upload, ${k.outsideEvents} outside events/ and gallery/`,
 );
 
 if (!apply) {

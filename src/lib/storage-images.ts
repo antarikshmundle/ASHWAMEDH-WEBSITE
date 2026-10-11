@@ -7,6 +7,8 @@
  */
 
 export const STORAGE_EVENT_IMAGES_PATH = "/storage/v1/object/public/ashwamedh-images/events/";
+/** Gallery images (Phase 10.6): gallery/<uuid>.<ext>, no sub-folders. */
+export const STORAGE_GALLERY_PATH = "/storage/v1/object/public/ashwamedh-images/gallery/";
 
 /**
  * The project's origin (`https://host`) from SUPABASE_URL, or `null` when it is missing or not a
@@ -27,16 +29,24 @@ export function storageOrigin(projectUrl: string | undefined): string | null {
   return url.origin;
 }
 
-/** next.config `images.remotePatterns`: only that host's public event-image folder, no query. */
+/** next.config `images.remotePatterns`: only that host's public event and gallery image folders, no query. */
 export function storageImagePatterns(projectUrl: string | undefined) {
   const origin = storageOrigin(projectUrl);
   if (!origin) return [];
+  const hostname = new URL(origin).hostname;
   return [
     {
       protocol: "https" as const,
-      hostname: new URL(origin).hostname,
+      hostname,
       port: "",
       pathname: `${STORAGE_EVENT_IMAGES_PATH}**`,
+      search: "",
+    },
+    {
+      protocol: "https" as const,
+      hostname,
+      port: "",
+      pathname: `${STORAGE_GALLERY_PATH}*`,
       search: "",
     },
   ];

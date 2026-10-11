@@ -3,18 +3,23 @@ import { randomUUID } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireAdmin } from "@/lib/admin/auth";
 import { inventoryEvent } from "./admin-events";
+import { validateGalleryItem, type GalleryValues } from "./collection-form";
 import { verifyImageDecodes } from "./image-decode";
-import { expireEventContent } from "./revalidate";
+import { expireCollection, expireEventContent } from "./revalidate";
 import { CMS_TABLES, STAGING_BUCKET, type UploadTicketRow } from "./schema";
 import { cmsAdminClient } from "./server";
 import {
   FILE_RULES,
-  MEDIA_KINDS,
+  TICKET_CATEGORIES,
+  checkFileRequest,
   checkUploadRequest,
   isMediaKind,
   stagingPath,
+  storagePath,
   validateUpload,
   type MediaKind,
+  type TicketKind,
+  type UploadRequestCheck,
 } from "./upload-policy";
 
 /**
@@ -171,16 +176,32 @@ export async function requestMediaUpload(input: {
   }
   if (!(event.data as { source_kind: string | null }).source_kind) return failure("needs-source");
 
-  const objectPath = stagingPath(kind, input.slug, randomUUID(), request.extension);
+  return issueTicket(
+    client,
+    { event_slug: input.slug, kind },
+    stagingPath(kind, input.slug, randomUUID(), request.extension),
+    request,
+    input.size,
+  );
+}
+
+/** Inserts the ticket and signs its staging path; closes the ticket again if signing fails. */
+async function issueTicket(
+  client: SupabaseClient,
+  owner: { event_slug: string | null; kind: TicketKind },
+  objectPath: string,
+  request: Extract<UploadRequestCheck, { ok: true }>,
+  size: number,
+): Promise<MediaResult<UploadTicket>> {
   const ticket = await client
     .from(CMS_TABLES.tickets)
     .insert({
-      event_slug: input.slug,
-      kind,
+      event_slug: owner.event_slug,
+      kind: owner.kind,
       object_path: objectPath,
       original_name: request.filename,
       declared_type: request.mimeType,
-      declared_size: input.size,
+      declared_size: size,
     })
     .select("id, expires_at")
     .single();
@@ -224,14 +245,20 @@ export interface FinalizedMedia {
 }
 
 /** issued (not expired) → processing, or a stale processing claim taken over. One winner. */
-async function claimTicket(client: SupabaseClient, id: string, slug: string, kind: MediaKind) {
+async function claimTicket(
+  client: SupabaseClient,
+  id: string,
+  slug: string | null,
+  kind: TicketKind,
+) {
   const now = new Date();
   const stale = new Date(now.getTime() - PROCESSING_STALE_MS);
-  return client
+  const base = client
     .from(CMS_TABLES.tickets)
     .update({ status: "processing", processing_at: now.toISOString() })
-    .eq("id", id)
-    .eq("event_slug", slug)
+    .eq("id", id);
+  // Gallery tickets have no event (Phase 10.6).
+  return (slug === null ? base.is("event_slug", null) : base.eq("event_slug", slug))
     .eq("kind", kind)
     .or(
       `and(status.eq.issued,expires_at.gt."${now.toISOString()}"),` +
@@ -291,13 +318,14 @@ const finalized = (row: FinalizeRow): MediaResult<FinalizedMedia> => ({
 });
 
 /** The ticket could not be claimed: explain why, or return the earlier result (idempotent). */
-async function unclaimed(
+async function unclaimed<T>(
   client: SupabaseClient,
   ticketId: string,
-  slug: string,
-  kind: MediaKind,
-  version: string,
-): Promise<MediaResult<FinalizedMedia>> {
+  slug: string | null,
+  kind: TicketKind,
+  repeat: () => PromiseLike<RpcReply>,
+  done: (data: unknown) => MediaResult<T>,
+): Promise<MediaResult<T>> {
   const { data, error } = await client
     .from(CMS_TABLES.tickets)
     .select("*")
@@ -307,8 +335,8 @@ async function unclaimed(
   const ticket = data as UploadTicketRow | null;
   if (!ticket || ticket.event_slug !== slug || ticket.kind !== kind) return failure("invalid");
   if (ticket.status === "finalized") {
-    const repeat = await finalizeRpc(client, ticketId, slug, kind, version, {});
-    return repeat.error ? databaseFailure(repeat.error) : finalized(repeat.data as FinalizeRow);
+    const again = await repeat();
+    return again.error ? databaseFailure(again.error) : done(again.data);
   }
   if (ticket.status === "failed") return failure("rejected");
   if (ticket.status === "processing") return failure("busy");
@@ -332,7 +360,7 @@ type BytesCheck =
 async function checkStoredBytes(ticket: UploadTicketRow, bytes: Uint8Array): Promise<BytesCheck> {
   if (bytes.byteLength !== ticket.declared_size)
     return { ok: false, error: "The uploaded file does not match the selected file." };
-  const category = MEDIA_KINDS[ticket.kind];
+  const category = TICKET_CATEGORIES[ticket.kind];
   const check = validateUpload({
     category,
     filename: ticket.original_name,
@@ -373,9 +401,39 @@ export async function finalizeMediaUpload(input: {
     console.error(`[cms] claiming an upload failed: ${claim.error.message}`);
     return failure("failed");
   }
-  if (!claim.data) return unclaimed(client, input.ticketId, input.slug, kind, input.version);
+  const repeat = () => finalizeRpc(client, input.ticketId, input.slug, kind, input.version, {});
+  const done = (data: unknown) => finalized(data as FinalizeRow);
+  if (!claim.data) return unclaimed(client, input.ticketId, input.slug, kind, repeat, done);
   const ticket = claim.data as UploadTicketRow;
-  const bucket = FILE_RULES[MEDIA_KINDS[kind]].bucket;
+  return publishAndLink(
+    client,
+    ticket,
+    alt.value,
+    (file) => finalizeRpc(client, ticket.id, input.slug, kind, input.version, file),
+    repeat,
+    async (data) => {
+      await expireEventContent(input.slug);
+      return done(data);
+    },
+  );
+}
+
+type RpcReply = { data: unknown; error: PgError | null };
+
+/**
+ * After a successful claim (events and the gallery): read the staged bytes, validate them, publish
+ * exactly those bytes, then link them in one database transaction (`link`). Compensation and
+ * recovery as described at the top of this file.
+ */
+async function publishAndLink<T>(
+  client: SupabaseClient,
+  ticket: UploadTicketRow,
+  altText: string | null,
+  link: (file: Record<string, unknown>) => PromiseLike<RpcReply>,
+  repeat: () => PromiseLike<RpcReply>,
+  done: (data: unknown) => MediaResult<T> | Promise<MediaResult<T>>,
+): Promise<MediaResult<T>> {
+  const bucket = FILE_RULES[TICKET_CATEGORIES[ticket.kind]].bucket;
   const path = ticket.object_path;
 
   // 1. The bytes that actually arrived in private staging.
@@ -415,10 +473,10 @@ export async function finalizeMediaUpload(input: {
   }
 
   // 4. One transaction: file row, version-checked link with revision, ticket finalized.
-  const linked = await finalizeRpc(client, ticket.id, input.slug, kind, input.version, {
+  const linked = await link({
     mime_type: check.mimeType,
     size_bytes: bytes.byteLength,
-    alt_text: alt.value,
+    alt_text: altText,
     width: check.width,
     height: check.height,
   });
@@ -434,11 +492,10 @@ export async function finalizeMediaUpload(input: {
         console.error(`[cms] finalizing ${ticket.id} unconfirmed: ${linked.error.message}`);
         return failure("failed", "The upload could not be confirmed. Reload the page to check.");
       }
-      const repeat = await finalizeRpc(client, ticket.id, input.slug, kind, input.version, {});
-      if (repeat.error) return failure("failed");
+      const again = await repeat();
+      if (again.error) return failure("failed");
       await removeQuietly(client, STAGING_BUCKET, path);
-      await expireEventContent(input.slug);
-      return finalized(repeat.data as FinalizeRow);
+      return done(again.data);
     }
     // Rolled back: nothing refers to the public copy. Compensate.
     const outcome = databaseFailure(linked.error);
@@ -451,8 +508,7 @@ export async function finalizeMediaUpload(input: {
   }
 
   await removeQuietly(client, STAGING_BUCKET, path);
-  await expireEventContent(input.slug);
-  return finalized(linked.data as FinalizeRow);
+  return done(linked.data);
 }
 
 /* ---------- 3. remove, alt text, restore ---------- */
@@ -544,4 +600,78 @@ export async function restoreEventRevision(
     version: String(row.updated_at),
     missing: (row.missing ?? []).filter(isMediaKind),
   };
+}
+
+/* ---------- 4. gallery uploads (Phase 10.6) — the same pipeline, no event ---------- */
+
+export const FINALIZE_GALLERY_RPC = "cms_finalize_gallery_upload";
+
+/** A ticket for one gallery image: staging path gallery/<uuid>.<ext>, 15 minutes. */
+export async function requestGalleryUpload(input: {
+  filename: string;
+  type: string;
+  size: number;
+}): Promise<MediaResult<UploadTicket>> {
+  await requireAdmin();
+  const request = checkFileRequest("gallery-image", {
+    filename: input.filename,
+    declaredType: input.type,
+    size: input.size,
+  });
+  if (!request.ok) return failure("invalid", request.error);
+  const { client } = cmsAdminClient();
+  return issueTicket(
+    client,
+    { event_slug: null, kind: "gallery" },
+    storagePath("gallery-image", randomUUID(), request.extension),
+    request,
+    input.size,
+  );
+}
+
+export interface FinalizedGalleryItem {
+  itemId: string;
+  fileId: string;
+  repeated: boolean;
+}
+
+/**
+ * Validates the stored image like event media, publishes it and creates a DRAFT gallery item with
+ * its caption and official source in one transaction. Nothing is public until it is published.
+ */
+export async function finalizeGalleryUpload(
+  input: { ticketId: string } & GalleryValues,
+): Promise<MediaResult<FinalizedGalleryItem>> {
+  await requireAdmin();
+  if (typeof input.ticketId !== "string" || !UUID.test(input.ticketId)) return failure("invalid");
+  const checked = validateGalleryItem({ ...input, status: "draft" });
+  if (!checked.ok) return failure("invalid", Object.values(checked.errors)[0]);
+  const { alt_text: altText, status: _status, ...item } = checked.payload;
+  void _status;
+  const { client } = cmsAdminClient();
+  const link = (file: Record<string, unknown>) =>
+    client.rpc(FINALIZE_GALLERY_RPC, { p_ticket_id: input.ticketId, p_item: item, p_file: file });
+  const repeat = () => link({});
+  const done = (data: unknown): MediaResult<FinalizedGalleryItem> => {
+    const row = data as { item_id: string; file_id: string; repeated: boolean };
+    return { ok: true, itemId: row.item_id, fileId: row.file_id, repeated: row.repeated };
+  };
+
+  const claim = await claimTicket(client, input.ticketId, null, "gallery");
+  if (claim.error) {
+    console.error(`[cms] claiming a gallery upload failed: ${claim.error.message}`);
+    return failure("failed");
+  }
+  if (!claim.data) return unclaimed(client, input.ticketId, null, "gallery", repeat, done);
+  return publishAndLink(
+    client,
+    claim.data as UploadTicketRow,
+    altText,
+    link,
+    repeat,
+    async (data) => {
+      await expireCollection("gallery");
+      return done(data);
+    },
+  );
 }

@@ -1,5 +1,5 @@
 import { eventInventory } from "@/data/events";
-import { STORAGE_EVENT_IMAGES_PATH, storageOrigin } from "./storage-images";
+import { STORAGE_EVENT_IMAGES_PATH, STORAGE_GALLERY_PATH, storageOrigin } from "./storage-images";
 
 /**
  * Official event images come from two places, and only these are passed to the image optimizer
@@ -34,4 +34,18 @@ export function eventImageSrc(
   const prefix = `${origin}${STORAGE_EVENT_IMAGES_PATH}${slug}/`;
   if (value !== image || !value.startsWith(prefix)) return null;
   return STORED_NAME.test(value.slice(prefix.length)) ? value : null;
+}
+
+/**
+ * A published gallery image (Phase 10.6): only the exact Storage URL
+ * `<SUPABASE_URL origin>/storage/v1/object/public/ashwamedh-images/gallery/<uuid>.<jpg|png|webp>`,
+ * compared as text. Anything else → `null` (the item is not shown).
+ */
+export function galleryImageSrc(
+  image: string | null,
+  origin: string | null = storageOrigin(process.env.SUPABASE_URL),
+): string | null {
+  if (!image || !origin) return null;
+  const prefix = `${origin}${STORAGE_GALLERY_PATH}`;
+  return image.startsWith(prefix) && STORED_NAME.test(image.slice(prefix.length)) ? image : null;
 }

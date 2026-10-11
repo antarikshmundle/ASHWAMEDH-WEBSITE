@@ -159,6 +159,10 @@ export type MediaKind = keyof typeof MEDIA_KINDS;
 export const isMediaKind = (value: unknown): value is MediaKind =>
   typeof value === "string" && Object.hasOwn(MEDIA_KINDS, value);
 
+/** Every upload-ticket kind and the file category it stores (Phase 10.6 adds gallery images). */
+export const TICKET_CATEGORIES = { ...MEDIA_KINDS, gallery: "gallery-image" } as const;
+export type TicketKind = keyof typeof TICKET_CATEGORIES;
+
 export type UploadRequestCheck =
   | { ok: true; category: FileCategory; mimeType: Mime; extension: string; filename: string }
   | { ok: false; error: string };
@@ -175,7 +179,14 @@ export function checkUploadRequest(input: {
   size: number;
 }): UploadRequestCheck {
   if (!isMediaKind(input.kind)) return { ok: false, error: "Unknown media kind." };
-  const category = MEDIA_KINDS[input.kind];
+  return checkFileRequest(MEDIA_KINDS[input.kind], input);
+}
+
+/** The same pre-check for any file category (Phase 10.6: gallery images). */
+export function checkFileRequest(
+  category: FileCategory,
+  input: { filename: string; declaredType: string; size: number },
+): UploadRequestCheck {
   const rules = FILE_RULES[category];
 
   const filename = sanitizeFilename(input.filename);

@@ -12,8 +12,8 @@ const sections: readonly { name: string; href?: string }[] = [
   { name: "Schedule", href: "/admin/settings#schedule" },
   { name: "Cultural Night", href: "/admin/settings#cultural-night" },
   { name: "Files", href: "/admin/files" },
-  { name: "Gallery" },
-  { name: "Team" },
+  { name: "Gallery", href: "/admin/gallery" },
+  { name: "Team", href: "/admin/team" },
   { name: "Festival Settings", href: "/admin/settings" },
   { name: "Contact / Footer", href: "/admin/settings#contact" },
   { name: "Settings" },
@@ -45,8 +45,7 @@ export default async function AdminDashboardPage() {
       <h2 className="mt-10 type-title text-fg">Content sections</h2>
       <p className="mt-1 type-body-sm text-fg-muted">
         Events (with their images and guidelines PDFs), Files and the festival settings (schedule,
-        Cultural Night, contact, social links, taglines) can be managed now; Gallery and Team arrive
-        in the next Phase 10 milestone.
+        Cultural Night, contact, social links, taglines), Gallery and Team can be managed now.
       </p>
       <ul className="mt-4 grid gap-3 sm:grid-cols-2">
         {sections.map(({ name, href }) => (

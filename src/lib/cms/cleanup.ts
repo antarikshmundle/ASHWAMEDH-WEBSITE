@@ -6,7 +6,7 @@ import { BUCKETS, CMS_TABLES, STAGING_BUCKET } from "./schema";
  * machine, service key) and by the admin Files page (after requireAdmin()). Dry run by default:
  * planCleanup() only lists; applyCleanup() deletes, re-checking every item right before it.
  *
- * Deletes ONLY, all within `events/` (the folder the media service writes):
+ * Deletes ONLY, all within `events/` and `gallery/` (the folders the media service writes):
  *   1. file rows no event uses, unused for longer than the grace (24 h since they were detached,
  *      or since upload for a row that was never attached) — the row first (the database's
  *      ON DELETE RESTRICT refuses a row that is in use), then its object;
@@ -23,7 +23,9 @@ import { BUCKETS, CMS_TABLES, STAGING_BUCKET } from "./schema";
 
 export const CLEANUP_GRACE_MS = 24 * 60 * 60 * 1000;
 export const STAGING_GRACE_MS = 60 * 60 * 1000;
-const MEDIA_FOLDER = "events/";
+/** Folders the media pipeline writes (events since 10.4, gallery since 10.6). */
+const MEDIA_FOLDERS = ["events/", "gallery/"] as const;
+const inMediaFolder = (path: string) => MEDIA_FOLDERS.some((folder) => path.startsWith(folder));
 const PUBLIC_BUCKETS = [BUCKETS.documents, BUCKETS.images] as const;
 
 export interface CleanupFile {
@@ -47,7 +49,7 @@ export interface CleanupObject {
 export interface CleanupInputs {
   now: Date;
   files: CleanupFile[];
-  /** File ids an event currently links (image_file_id / guidelines_file_id). */
+  /** File ids in use: linked by an event (image / guidelines) or by a gallery item. */
   referenced: Set<string>;
   tickets: CleanupTicket[];
   objects: CleanupObject[];
@@ -84,7 +86,7 @@ export function planCleanup(input: CleanupInputs): CleanupPlan {
 
   for (const file of input.files) {
     const since = file.detached_at ?? file.uploaded_at;
-    if (!file.path.startsWith(MEDIA_FOLDER)) kept.outsideEvents++;
+    if (!inMediaFolder(file.path)) kept.outsideEvents++;
     else if (input.referenced.has(file.id)) kept.inUse++;
     else if (active.has(file.path)) kept.activeUpload++;
     else if (!(ms(since) <= graceCutoff)) kept.inGrace++;
@@ -93,7 +95,7 @@ export function planCleanup(input: CleanupInputs): CleanupPlan {
 
   const rows = new Set(input.files.map((f) => `${f.bucket}/${f.path}`));
   for (const object of input.objects) {
-    if (!object.path.startsWith(MEDIA_FOLDER)) continue;
+    if (!inMediaFolder(object.path)) continue;
     const written = ms(object.writtenAt);
     if (object.bucket === STAGING_BUCKET) {
       if (active.has(object.path)) kept.activeUpload++;
@@ -132,7 +134,7 @@ async function listObjects(client: SupabaseClient, bucket: string): Promise<Clea
       if (data.length < 1000) break;
     }
   };
-  await walk(MEDIA_FOLDER.slice(0, -1));
+  for (const folder of MEDIA_FOLDERS) await walk(folder.slice(0, -1));
   return out;
 }
 
@@ -146,6 +148,10 @@ export async function loadCleanupInputs(
   if (files.error) throw new Error(`Loading files failed: ${files.error.message}`);
   const events = await client.from(CMS_TABLES.events).select("image_file_id, guidelines_file_id");
   if (events.error) throw new Error(`Loading events failed: ${events.error.message}`);
+  // Gallery items reference their files too (Phase 10.6). Before that migration: no table, none.
+  const gallery = await client.from(CMS_TABLES.gallery).select("file_id");
+  if (gallery.error && gallery.error.code !== "PGRST205" && gallery.error.code !== "42P01")
+    throw new Error(`Loading gallery items failed: ${gallery.error.message}`);
   const tickets = await client
     .from(CMS_TABLES.tickets)
     .select("object_path, status, expires_at")
@@ -159,6 +165,7 @@ export async function loadCleanupInputs(
     if (row.image_file_id) referenced.add(row.image_file_id);
     if (row.guidelines_file_id) referenced.add(row.guidelines_file_id);
   }
+  for (const row of (gallery.data ?? []) as { file_id: string }[]) referenced.add(row.file_id);
   const objects: CleanupObject[] = [];
   for (const bucket of [...PUBLIC_BUCKETS, STAGING_BUCKET])
     objects.push(...(await listObjects(client, bucket)));

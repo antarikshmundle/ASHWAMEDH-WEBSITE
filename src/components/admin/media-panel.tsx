@@ -11,6 +11,7 @@ import {
 } from "@/app/admin/events/media-actions";
 import type { MediaFileSummary } from "@/types/admin-media";
 import { controlClass } from "./fields";
+import { sendFile } from "./send-file";
 
 /**
  * One media slot of the event editor (Phase 10.4.5): the event image or the guidelines PDF.
@@ -78,22 +79,6 @@ const PHASE_TEXT: Record<Exclude<Phase, "idle">, string> = {
   removing: "Removing…",
   "saving-alt": "Saving the alt text…",
 };
-
-/** PUT to the signed staging URL with upload progress. The URL is never logged or shown. */
-function sendFile(url: string, file: File, type: string, onProgress: (percent: number) => void) {
-  return new Promise<boolean>((resolve) => {
-    const request = new XMLHttpRequest();
-    request.open("PUT", url);
-    request.setRequestHeader("content-type", type);
-    request.timeout = 10 * 60 * 1000;
-    request.upload.onprogress = (event) => {
-      if (event.lengthComputable) onProgress(Math.round((event.loaded / event.total) * 100));
-    };
-    request.onload = () => resolve(request.status >= 200 && request.status < 300);
-    request.onerror = request.onabort = request.ontimeout = () => resolve(false);
-    request.send(file);
-  });
-}
 
 export function MediaPanel(props: Props) {
   const copy = COPY[props.kind];

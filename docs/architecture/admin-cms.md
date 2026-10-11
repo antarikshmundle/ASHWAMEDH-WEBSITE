@@ -477,6 +477,31 @@ Next.js image optimizer.
   days. **Deferred:** schedule day tabs — not shown until the official days are confirmed (OD-04); they need
   a decision on per-day rows.
 
+## 10.6 — Gallery and Team
+
+- **Migration** `…_cms_collections.sql`: `gallery_items` (file → `cms_files` gallery-image, RESTRICT; caption;
+  source; draft / published; order) and `team_members` (name, role, group; source; draft / published;
+  order — **no photos**, no personal contact details). Upload tickets gain kind `gallery` (path
+  `gallery/<uuid>.<ext>`, no event); event tickets keep exactly their rules. RPCs (service role only):
+  `cms_finalize_gallery_upload` (ticket → file row → draft item, one transaction, idempotent),
+  `cms_delete_gallery_item` (versioned; the file is only detached), `cms_reorder_gallery` / `cms_reorder_team`
+  (the whole order at once). RLS on, nothing for anon / authenticated.
+- **Uploads** reuse the 10.4 pipeline unchanged (signed staging upload, byte validation, D6, full decode,
+  publish exactly the validated bytes, compensation, idempotent finalize); `media-admin.ts` shares its
+  claim / publish / link steps between events and the gallery.
+- **Public:** `/gallery` and `/team` show **published** items only (`cms:gallery` / `cms:team`); with none — or in
+  repository mode, or before the migration — the exact Coming Soon state. Gallery: 3 / 2 / 1 columns, caption
+  below, no lightbox; only exact `ashwamedh-images/gallery/<uuid>.<ext>` URLs (`galleryImageSrc`, optimizer
+  pattern `gallery/*`). Team: a heading per group, name and role cards.
+- **Admin:** `/admin/gallery` (upload as Draft with caption, alt text and source; edit, publish, reorder, delete)
+  and `/admin/team` (add, edit, publish, reorder, delete). Every change is versioned and refreshes only that
+  page's data.
+- **Content rules:** official items only, each with its source. A previous edition's photo states its
+  edition / year in the caption (OD 10.6-3). Team photos need verified official authorization and are not
+  supported yet.
+- **Cleanup** also covers `gallery/`: a file a gallery item uses is in use; a deleted item's file goes after
+  the 24-hour grace.
+
 ## Environment
 
 | Variable                             | Needed for                  | Notes                                                                          |
@@ -497,5 +522,5 @@ Next.js image optimizer.
 | 10.3      | Done — event editor with server-side validation, atomic save (`cms_save_event`), optimistic concurrency, revisions with restore, targeted refresh (proxy slug guard).        |
 | 10.4      | 10.4.1–10.4.6 done (schema, validation, media service, public rendering, admin panels, cleanup); final QA (10.4.7) next.                                                     |
 | 10.5      | Done (migration applied 2026-10-11) — festival settings: contact, social links, Cultural Night dates, schedule times / venues, taglines. Schedule day tabs deferred (OD-04). |
-| 10.6      | Gallery and Team (data model + public rendering of official content only).                                                                                                   |
+| 10.6      | Done (migration applied 2026-10-10) — Gallery (official images via the 10.4 pipeline) and Team (names, roles, groups; no photos), draft / published, ordered.                |
 | 10.7      | QA, security review, backup / rollback drill, runbook.                                                                                                                       |

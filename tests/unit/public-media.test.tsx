@@ -54,15 +54,16 @@ describe("storage origin and optimizer patterns", () => {
       expect(storageOrigin(bad), String(bad)).toBeNull();
   });
 
-  it("allows exactly that host's public event-image folder, without query strings", () => {
+  it("allows exactly that host's public event and gallery image folders, without query strings", () => {
+    const base = {
+      protocol: "https",
+      hostname: "abcdefghijklmnop.supabase.co",
+      port: "",
+      search: "",
+    };
     expect(storageImagePatterns(ORIGIN)).toEqual([
-      {
-        protocol: "https",
-        hostname: "abcdefghijklmnop.supabase.co",
-        port: "",
-        pathname: "/storage/v1/object/public/ashwamedh-images/events/**",
-        search: "",
-      },
+      { ...base, pathname: "/storage/v1/object/public/ashwamedh-images/events/**" },
+      { ...base, pathname: "/storage/v1/object/public/ashwamedh-images/gallery/*" },
     ]);
     expect(storageImagePatterns(undefined)).toEqual([]);
     expect(storageImagePatterns("http://evil.example")).toEqual([]);
@@ -84,6 +85,15 @@ describe("storage origin and optimizer patterns", () => {
     const { hasRemoteMatch } = await import("next/dist/shared/lib/match-remote-pattern");
     const allowed = (url: string) => hasRemoteMatch([], images.remotePatterns ?? [], new URL(url));
     expect(allowed(good())).toBe(true);
+    expect(
+      allowed(`${ORIGIN}/storage/v1/object/public/ashwamedh-images/gallery/${UUID}.webp`),
+    ).toBe(true);
+    expect(
+      allowed(`${ORIGIN}/storage/v1/object/public/ashwamedh-images/gallery/sub/${UUID}.webp`),
+    ).toBe(false);
+    expect(allowed(`${ORIGIN}/storage/v1/object/public/ashwamedh-images/team/${UUID}.webp`)).toBe(
+      false,
+    );
     for (const url of [
       good().replace("https:", "http:"),
       good().replace(".supabase.co", ".supabase.co:444"),
