@@ -127,14 +127,10 @@ them; no storage policies on the CMS buckets.
   Asia/Kolkata (IST) handling, independent of the visitor's time zone; (4) defined behaviour before the
   date is set (hidden — never a guessed target), during the festival and after it ends.
 - **QA artifacts from the 10.6 live test** — synthetic gallery file `ebbf2cc6-66f3-4e6c-9db4-df9a88c4c06b`
-  (object `ashwamedh-images/gallery/28adcf10-67b4-41fb-aefd-77f57b641248.png`). Its 24-hour grace ended
-  2026-10-11 07:47:18 UTC, but its **deletion is deferred** until the migration
-  `20261013120000_cms_ticket_file_history` has been applied to the live database and verified (the ticket → file
-  foreign key is gone). Until then the cleanup would set the finalized upload ticket
-  `c8ff2bb0-adf5-4c19-a1f9-16e34f8cc110`'s `file_id` to NULL (`ON DELETE SET NULL`), so do not delete the file —
-  neither `npm run cms:cleanup -- --apply` nor the admin Files page. After the migration the deletion is not
-  expected to change the ticket; confirm it by comparing the ticket's full row before and after. Each live step
-  (migration dry run and apply, ticket snapshot, cleanup dry run, `--apply`, verification) needs its own approval.
-  The ticket must be preserved unchanged pending the retention decision.
+  (object `ashwamedh-images/gallery/28adcf10-67b4-41fb-aefd-77f57b641248.png`): **deleted on 2026-10-11** by
+  `npm run cms:cleanup -- --apply`, after the migration `20261013120000_cms_ticket_file_history` had been applied
+  to the live database and verified. The finalized upload ticket `c8ff2bb0-adf5-4c19-a1f9-16e34f8cc110` was
+  preserved unchanged (its full row, including the historical `file_id`, matched before and after). Its
+  long-term retention decision is still pending.
 - **Deployment** — the production host, its environment variables and CDN purge options are not
   verified from this repository.
